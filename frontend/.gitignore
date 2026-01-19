@@ -21,3 +21,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# backend specific
+backend/node_modules/
+backend/db.js
+
+# root node modules (just in case)
+/node_modules/
