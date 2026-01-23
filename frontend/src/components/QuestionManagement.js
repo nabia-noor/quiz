@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { questionAPI, quizAPI } from "../api";
+import { questionAPI, quizAPI, classAPI } from "../api";
 import "./QuestionManagement.css";
 
 function QuestionManagement() {
   const { quizId } = useParams();
   const [quiz, setQuiz] = useState(null);
+  const [quizzes, setQuizzes] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [selectedQuizId, setSelectedQuizId] = useState(quizId || "");
   const [questions, setQuestions] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
+    questionType: "mcq",
     questionText: "",
+    classId: "",
     options: [
       { optionText: "", isCorrect: false },
       { optionText: "", isCorrect: false },
@@ -22,13 +27,68 @@ function QuestionManagement() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchQuiz();
-    fetchQuestions();
+    fetchQuizzes();
+    fetchClasses();
+  }, []);
+
+  useEffect(() => {
+    setSelectedQuizId(quizId || "");
   }, [quizId]);
 
-  const fetchQuiz = async () => {
+  useEffect(() => {
+    if (selectedQuizId) {
+      fetchQuiz(selectedQuizId);
+      fetchQuestions(selectedQuizId);
+    } else {
+      setQuiz(null);
+      setQuestions([]);
+    }
+  }, [selectedQuizId]);
+
+  useEffect(() => {
+    if (quiz?.classId && !formData.classId) {
+      setFormData((prev) => ({
+        ...prev,
+        classId: quiz.classId._id || quiz.classId,
+      }));
+    }
+  }, [quiz, formData.classId]);
+
+  const classOptions =
+    classes && classes.length
+      ? classes
+      : [
+          { _id: "bs-placeholder", name: "BS", semester: "", disabled: true },
+          { _id: "ms-placeholder", name: "MS", semester: "", disabled: true },
+          { _id: "phd-placeholder", name: "PhD", semester: "", disabled: true },
+        ];
+
+  const fetchQuizzes = async () => {
     try {
-      const result = await quizAPI.getById(quizId);
+      const result = await quizAPI.getAll();
+      if (result.success) {
+        setQuizzes(result.quizzes || []);
+      }
+    } catch (error) {
+      console.error("Error fetching quizzes:", error);
+    }
+  };
+
+  const fetchClasses = async () => {
+    try {
+      const result = await classAPI.getAll();
+      if (result.success) {
+        setClasses(result.classes || []);
+      }
+    } catch (error) {
+      console.error("Error fetching classes:", error);
+    }
+  };
+
+  const fetchQuiz = async (id) => {
+    if (!id) return;
+    try {
+      const result = await quizAPI.getById(id);
       if (result.success) {
         setQuiz(result.quiz);
       }
@@ -37,9 +97,10 @@ function QuestionManagement() {
     }
   };
 
-  const fetchQuestions = async () => {
+  const fetchQuestions = async (id) => {
+    if (!id) return;
     try {
-      const result = await questionAPI.getByQuiz(quizId);
+      const result = await questionAPI.getByQuiz(id);
       if (result.success) {
         setQuestions(result.questions);
       }
@@ -49,7 +110,21 @@ function QuestionManagement() {
   };
 
   const handleQuestionChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (e.target.name === "questionType") {
+      setFormData((prev) => ({
+        ...prev,
+        questionType: e.target.value,
+        options:
+          e.target.value === "mcq"
+            ? prev.options.map((opt) => ({ ...opt, isCorrect: false }))
+            : [],
+      }));
+      return;
+    }
+
+    const value =
+      e.target.type === "checkbox" ? e.target.checked : e.target.value;
+    setFormData({ ...formData, [e.target.name]: value });
   };
 
   const handleOptionChange = (index, field, value) => {
@@ -57,7 +132,7 @@ function QuestionManagement() {
     newOptions[index][field] = value;
 
     // If marking an option as correct, unmark others
-    if (field === "isCorrect" && value) {
+    if (formData.questionType === "mcq" && field === "isCorrect" && value) {
       newOptions.forEach((opt, i) => {
         if (i !== index) opt.isCorrect = false;
       });
@@ -89,25 +164,37 @@ function QuestionManagement() {
       return;
     }
 
-    const validOptions = formData.options.filter((opt) =>
-      opt.optionText.trim()
-    );
-    if (validOptions.length < 2) {
-      alert("Please provide at least 2 options");
+    const quizIdToUse = selectedQuizId || quizId;
+
+    if (!quizIdToUse) {
+      alert("Please select a quiz");
       return;
     }
 
-    const hasCorrectAnswer = validOptions.some((opt) => opt.isCorrect);
-    if (!hasCorrectAnswer) {
-      alert("Please mark one option as correct");
-      return;
+    const validOptions = formData.options.filter((opt) =>
+      opt.optionText.trim(),
+    );
+
+    if (formData.questionType === "mcq") {
+      if (validOptions.length < 2) {
+        alert("Please provide at least 2 options for MCQ");
+        return;
+      }
+
+      const hasCorrectAnswer = validOptions.some((opt) => opt.isCorrect);
+      if (!hasCorrectAnswer) {
+        alert("Please mark one option as correct");
+        return;
+      }
     }
 
     try {
       const dataToSubmit = {
-        quizId,
+        quizId: quizIdToUse,
+        questionType: formData.questionType,
         questionText: formData.questionText,
-        options: validOptions,
+        classId: formData.classId || undefined,
+        options: formData.questionType === "mcq" ? validOptions : [],
         marks: Number(formData.marks),
       };
 
@@ -119,7 +206,7 @@ function QuestionManagement() {
       }
 
       if (result.success) {
-        fetchQuestions();
+        fetchQuestions(quizIdToUse);
         resetForm();
       } else {
         alert(result.message || "Operation failed");
@@ -131,14 +218,14 @@ function QuestionManagement() {
 
   const handleEdit = (question) => {
     setFormData({
+      questionType: question.questionType || "mcq",
       questionText: question.questionText,
+      classId: question.classId?._id || question.classId || "",
       options:
+        (question.questionType || "mcq") === "mcq" &&
         question.options.length > 0
           ? question.options
-          : [
-              { optionText: "", isCorrect: false },
-              { optionText: "", isCorrect: false },
-            ],
+          : [],
       marks: question.marks,
     });
     setEditingId(question._id);
@@ -150,7 +237,7 @@ function QuestionManagement() {
       try {
         const result = await questionAPI.delete(id);
         if (result.success) {
-          fetchQuestions();
+          fetchQuestions(selectedQuizId);
         } else {
           alert(result.message || "Delete failed");
         }
@@ -162,7 +249,9 @@ function QuestionManagement() {
 
   const resetForm = () => {
     setFormData({
+      questionType: "mcq",
       questionText: "",
+      classId: "",
       options: [
         { optionText: "", isCorrect: false },
         { optionText: "", isCorrect: false },
@@ -202,11 +291,35 @@ function QuestionManagement() {
             <Link to="/admin/quizzes" className="back-link">
               ← Back to Quizzes
             </Link>
-            <h2>Manage Questions: {quiz?.title}</h2>
-            <p className="quiz-info">
-              Total Marks: {quiz?.totalMarks} | Duration: {quiz?.duration}{" "}
-              minutes
-            </p>
+            <h2>
+              Manage Questions
+              {quiz?.title ? `: ${quiz.title}` : ""}
+            </h2>
+            {selectedQuizId ? (
+              <p className="quiz-info">
+                Total Marks: {quiz?.totalMarks ?? "-"} | Duration:{" "}
+                {quiz?.duration ?? "-"} minutes
+              </p>
+            ) : (
+              <p className="quiz-info">
+                Select a quiz to start adding questions.
+              </p>
+            )}
+
+            <div className="quiz-selector" style={{ marginTop: "10px" }}>
+              <label>Select Quiz: </label>
+              <select
+                value={selectedQuizId}
+                onChange={(e) => setSelectedQuizId(e.target.value)}
+              >
+                <option value="">-- Choose a quiz --</option>
+                {quizzes.map((q) => (
+                  <option key={q._id} value={q._id}>
+                    {q.title}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
@@ -233,63 +346,119 @@ function QuestionManagement() {
               </div>
 
               <div className="form-group">
-                <label>Marks *</label>
-                <input
-                  type="number"
-                  name="marks"
-                  value={formData.marks}
+                <label>Question Type *</label>
+                <select
+                  name="questionType"
+                  value={formData.questionType}
                   onChange={handleQuestionChange}
-                  min="1"
                   required
-                />
+                >
+                  <option value="mcq">Multiple Choice (auto-graded)</option>
+                  <option value="text">Typed (manual marking)</option>
+                </select>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Class (BS / MS / PhD)</label>
+                  <select
+                    name="classId"
+                    value={formData.classId}
+                    onChange={handleQuestionChange}
+                  >
+                    <option value="">Select Class</option>
+                    {classOptions.map((cls) => (
+                      <option
+                        key={cls._id}
+                        value={cls._id}
+                        disabled={cls.disabled}
+                      >
+                        {cls.name}
+                        {cls.semester ? ` - ${cls.semester}` : ""}
+                        {cls.disabled ? " (add in Classes page)" : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {!classes.length && (
+                    <p className="helper-text">
+                      Add BS, MS, or PhD classes in the Classes/Semesters page
+                      to enable selection.
+                    </p>
+                  )}
+                </div>
+
+                <div className="form-group">
+                  <label>Marks *</label>
+                  <input
+                    type="number"
+                    name="marks"
+                    value={formData.marks}
+                    onChange={handleQuestionChange}
+                    min="1"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="options-section">
-                <label>Options (Mark one as correct) *</label>
-                {formData.options.map((option, index) => (
-                  <div key={index} className="option-row">
-                    <input
-                      type="text"
-                      value={option.optionText}
-                      onChange={(e) =>
-                        handleOptionChange(index, "optionText", e.target.value)
-                      }
-                      placeholder={`Option ${index + 1}`}
-                      className="option-input"
-                    />
-                    <label className="correct-label">
-                      <input
-                        type="radio"
-                        name="correctAnswer"
-                        checked={option.isCorrect}
-                        onChange={(e) =>
-                          handleOptionChange(
-                            index,
-                            "isCorrect",
-                            e.target.checked
-                          )
-                        }
-                      />
-                      Correct
-                    </label>
-                    {formData.options.length > 2 && (
-                      <button
-                        type="button"
-                        onClick={() => removeOption(index)}
-                        className="btn-remove"
-                      >
-                        ✕
-                      </button>
-                    )}
+                {formData.questionType === "mcq" ? (
+                  <>
+                    <label>Options (Mark one as correct) *</label>
+                    {formData.options.map((option, index) => (
+                      <div key={index} className="option-row">
+                        <input
+                          type="text"
+                          value={option.optionText}
+                          onChange={(e) =>
+                            handleOptionChange(
+                              index,
+                              "optionText",
+                              e.target.value,
+                            )
+                          }
+                          placeholder={`Option ${index + 1}`}
+                          className="option-input"
+                        />
+                        <label className="correct-label">
+                          <input
+                            type="radio"
+                            name="correctAnswer"
+                            checked={option.isCorrect}
+                            onChange={(e) =>
+                              handleOptionChange(
+                                index,
+                                "isCorrect",
+                                e.target.checked,
+                              )
+                            }
+                          />
+                          Correct
+                        </label>
+                        {formData.options.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => removeOption(index)}
+                            className="btn-remove"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={addOption}
+                      className="btn-add-option"
+                    >
+                      + Add Option
+                    </button>
+                  </>
+                ) : (
+                  <div className="typed-note">
+                    Typed questions are manually graded. No options or correct
+                    answers are required.
                   </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={addOption}
-                  className="btn-add-option"
-                >
-                  + Add Option
-                </button>
+                )}
               </div>
 
               <div className="form-actions">
@@ -309,7 +478,15 @@ function QuestionManagement() {
         )}
 
         <div className="table-container">
-          <h3>Questions ({questions.length})</h3>
+          <div className="questions-header">
+            <h3>Questions ({questions.length})</h3>
+            <button
+              onClick={() => fetchQuestions(selectedQuizId)}
+              className="btn-refresh"
+            >
+              🔄 Refresh
+            </button>
+          </div>
           {questions.length > 0 ? (
             <div className="questions-list">
               {questions.map((question, index) => (
@@ -317,6 +494,17 @@ function QuestionManagement() {
                   <div className="question-header">
                     <h4>Question {index + 1}</h4>
                     <div className="question-actions">
+                      <span
+                        className={`type-badge ${
+                          (question.questionType || "mcq") === "text"
+                            ? "typed"
+                            : "mcq"
+                        }`}
+                      >
+                        {(question.questionType || "mcq") === "text"
+                          ? "Typed"
+                          : "MCQ"}
+                      </span>
                       <span className="marks-badge">
                         {question.marks} marks
                       </span>
@@ -335,16 +523,22 @@ function QuestionManagement() {
                     </div>
                   </div>
                   <p className="question-text">{question.questionText}</p>
-                  <div className="options-display">
-                    {question.options.map((option, idx) => (
-                      <div key={idx} className="option-display">
-                        <span className="option-label">
-                          {String.fromCharCode(65 + idx)}.
-                        </span>
-                        <span>{option.optionText}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {(question.options || []).length > 0 ? (
+                    <div className="options-display">
+                      {question.options.map((option, idx) => (
+                        <div key={idx} className="option-display">
+                          <span className="option-label">
+                            {String.fromCharCode(65 + idx)}.
+                          </span>
+                          <span>{option.optionText}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="options-display muted-text">
+                      Typed response question (no options).
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

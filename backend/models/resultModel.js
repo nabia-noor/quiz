@@ -19,8 +19,17 @@ const resultSchema = new mongoose.Schema(
           ref: "Question",
         },
         selectedAnswer: String,
+        typedAnswer: String,
         isCorrect: Boolean,
-        marksObtained: Number,
+        marksObtained: {
+          type: Number,
+          default: 0,
+        },
+        requiresManualReview: {
+          type: Boolean,
+          default: false,
+        },
+        evaluatedOptions: [Number],
       },
     ],
     totalMarks: {
@@ -43,10 +52,14 @@ const resultSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    manualReviewPending: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export default mongoose.models.Result || mongoose.model("Result", resultSchema);

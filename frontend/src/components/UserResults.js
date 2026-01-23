@@ -10,7 +10,7 @@ const UserResults = () => {
   const [selectedResult, setSelectedResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [filter, setFilter] = useState("all"); // all, passed, failed
+  const [filter, setFilter] = useState("all"); // all, passed, failed, pending
 
   useEffect(() => {
     fetchUserResults();
@@ -27,7 +27,7 @@ const UserResults = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (response.data.success) {
@@ -36,7 +36,7 @@ const UserResults = () => {
         // If there's a selected result ID from navigation, select it
         if (location.state?.resultId) {
           const result = response.data.results.find(
-            (r) => r._id === location.state.resultId
+            (r) => r._id === location.state.resultId,
           );
           if (result) {
             setSelectedResult(result);
@@ -53,8 +53,10 @@ const UserResults = () => {
 
   const getFilteredResults = () => {
     return results.filter((result) => {
-      if (filter === "passed") return result.isPassed;
-      if (filter === "failed") return !result.isPassed;
+      const pending = result.manualReviewPending;
+      if (filter === "pending") return pending;
+      if (filter === "passed") return !pending && result.isPassed;
+      if (filter === "failed") return !pending && !result.isPassed;
       return true;
     });
   };
@@ -117,11 +119,25 @@ const UserResults = () => {
                 </button>
                 <button
                   className={`filter-tab ${
+                    filter === "pending" ? "active" : ""
+                  }`}
+                  onClick={() => setFilter("pending")}
+                >
+                  Pending ({results.filter((r) => r.manualReviewPending).length}
+                  )
+                </button>
+                <button
+                  className={`filter-tab ${
                     filter === "passed" ? "active" : ""
                   }`}
                   onClick={() => setFilter("passed")}
                 >
-                  Passed ({results.filter((r) => r.isPassed).length})
+                  Passed (
+                  {
+                    results.filter((r) => !r.manualReviewPending && r.isPassed)
+                      .length
+                  }
+                  )
                 </button>
                 <button
                   className={`filter-tab ${
@@ -129,7 +145,12 @@ const UserResults = () => {
                   }`}
                   onClick={() => setFilter("failed")}
                 >
-                  Failed ({results.filter((r) => !r.isPassed).length})
+                  Failed (
+                  {
+                    results.filter((r) => !r.manualReviewPending && !r.isPassed)
+                      .length
+                  }
+                  )
                 </button>
               </div>
 
@@ -151,10 +172,18 @@ const UserResults = () => {
                         <h3>{result.quizName || `Quiz - ${result.quizId}`}</h3>
                         <span
                           className={`status-badge ${
-                            result.isPassed ? "passed" : "failed"
+                            result.manualReviewPending
+                              ? "pending"
+                              : result.isPassed
+                                ? "passed"
+                                : "failed"
                           }`}
                         >
-                          {result.isPassed ? "✅ Passed" : "❌ Failed"}
+                          {result.manualReviewPending
+                            ? "⏳ Result Pending"
+                            : result.isPassed
+                              ? "✅ Passed"
+                              : "❌ Failed"}
                         </span>
                       </div>
 
@@ -162,7 +191,9 @@ const UserResults = () => {
                         <div className="score-display">
                           <div className="score-circle">
                             <span className="score-value">
-                              {result.percentage.toFixed(1)}%
+                              {result.manualReviewPending
+                                ? "--"
+                                : `${result.percentage.toFixed(1)}%`}
                             </span>
                           </div>
                           <div className="score-details">
@@ -186,7 +217,7 @@ const UserResults = () => {
             {/* Result Details */}
             {selectedResult && (
               <section className="result-details-section">
-                <h2>Result Details</h2>
+                <h2>Quiz Results</h2>
 
                 <div className="details-card">
                   <div className="detail-header">
@@ -196,12 +227,30 @@ const UserResults = () => {
                     </h3>
                     <span
                       className={`status-badge ${
-                        selectedResult.isPassed ? "passed" : "failed"
+                        selectedResult.manualReviewPending
+                          ? "pending"
+                          : selectedResult.isPassed
+                            ? "passed"
+                            : "failed"
                       }`}
                     >
-                      {selectedResult.isPassed ? "✅ Passed" : "❌ Failed"}
+                      {selectedResult.manualReviewPending
+                        ? "⏳ Result Pending"
+                        : selectedResult.isPassed
+                          ? "✅ Passed"
+                          : "❌ Failed"}
                     </span>
                   </div>
+
+                  {selectedResult.manualReviewPending && (
+                    <div className="quiz-summary">
+                      <p>
+                        This result is awaiting manual review for typed
+                        questions. Scores and status will finalize after the
+                        instructor marks them.
+                      </p>
+                    </div>
+                  )}
 
                   <div className="score-overview">
                     <div className="score-item">
@@ -213,11 +262,21 @@ const UserResults = () => {
                     </div>
                     <div className="score-item">
                       <label>Percentage</label>
-                      <p>{selectedResult.percentage.toFixed(2)}%</p>
+                      <p>
+                        {selectedResult.manualReviewPending
+                          ? "Pending"
+                          : `${selectedResult.percentage.toFixed(2)}%`}
+                      </p>
                     </div>
                     <div className="score-item">
                       <label>Status</label>
-                      <p>{selectedResult.isPassed ? "Passed" : "Failed"}</p>
+                      <p>
+                        {selectedResult.manualReviewPending
+                          ? "Result Pending"
+                          : selectedResult.isPassed
+                            ? "Passed"
+                            : "Failed"}
+                      </p>
                     </div>
                     <div className="score-item">
                       <label>Submitted On</label>
@@ -227,42 +286,92 @@ const UserResults = () => {
 
                   {/* Answers Review */}
                   <div className="answers-section">
-                    <h4>Answer Review</h4>
+                    <h4>📋 Quiz Results</h4>
+                    <div className="quiz-summary">
+                      <p>
+                        <strong>Overall Score:</strong>{" "}
+                        {selectedResult.obtainedMarks}/
+                        {selectedResult.totalMarks} (
+                        {selectedResult.manualReviewPending
+                          ? "Pending"
+                          : `${selectedResult.percentage.toFixed(2)}%`}
+                        )
+                      </p>
+                      <p
+                        className={
+                          selectedResult.manualReviewPending
+                            ? "pending"
+                            : selectedResult.isPassed
+                              ? "passed"
+                              : "failed"
+                        }
+                      >
+                        <strong>Status:</strong>{" "}
+                        {selectedResult.manualReviewPending
+                          ? "⏳ Pending manual review"
+                          : selectedResult.isPassed
+                            ? "✅ Passed"
+                            : "❌ Failed"}
+                      </p>
+                    </div>
+
+                    <h4>❓ Question Results</h4>
 
                     {selectedResult.answers &&
                     selectedResult.answers.length > 0 ? (
                       <div className="answers-list">
-                        {selectedResult.answers.map((answer, index) => (
-                          <div
-                            key={index}
-                            className={`answer-item ${
-                              answer.isCorrect ? "correct" : "incorrect"
-                            }`}
-                          >
-                            <div className="answer-header">
-                              <span className="question-no">
-                                Question {index + 1}
-                              </span>
-                              <span
-                                className={`answer-badge ${
-                                  answer.isCorrect ? "correct" : "incorrect"
-                                }`}
-                              >
-                                {answer.isCorrect ? "✓ Correct" : "✗ Incorrect"}
-                              </span>
+                        {selectedResult.answers.map((answer, index) => {
+                          const isPending = answer.requiresManualReview;
+                          const isCorrect = answer.isCorrect === true;
+                          const isIncorrect = answer.isCorrect === false;
+                          const isManual =
+                            !isPending && answer.isCorrect === null;
+
+                          let rowClass = "incorrect";
+                          if (isPending) rowClass = "pending";
+                          else if (isManual) rowClass = "manual";
+                          else if (isCorrect) rowClass = "correct";
+
+                          let badgeClass = rowClass;
+                          let badgeText = "✗ Incorrect";
+                          if (isPending) {
+                            badgeText = "Pending review";
+                          } else if (isManual) {
+                            badgeText = "Manual score";
+                          } else if (isCorrect) {
+                            badgeText = "✓ Correct";
+                          }
+
+                          return (
+                            <div
+                              key={index}
+                              className={`answer-item ${rowClass}`}
+                            >
+                              <div className="answer-header">
+                                <span className="question-no">
+                                  Question {index + 1}
+                                </span>
+                                <span className={`answer-badge ${badgeClass}`}>
+                                  {badgeText}
+                                </span>
+                              </div>
+                              <div className="answer-body">
+                                <p>
+                                  <strong>Your Answer:</strong>{" "}
+                                  {answer.selectedAnswer ||
+                                    answer.typedAnswer ||
+                                    "Not answered"}
+                                </p>
+                                <p>
+                                  <strong>Marks Obtained:</strong>{" "}
+                                  {isPending
+                                    ? "Pending"
+                                    : answer.marksObtained || 0}
+                                </p>
+                              </div>
                             </div>
-                            <div className="answer-body">
-                              <p>
-                                <strong>Your Answer:</strong>{" "}
-                                {answer.selectedAnswer || "Not answered"}
-                              </p>
-                              <p>
-                                <strong>Marks Obtained:</strong>{" "}
-                                {answer.marksObtained || 0}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <p>No answer details available.</p>

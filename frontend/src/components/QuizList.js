@@ -8,9 +8,9 @@ const QuizList = () => {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [filter, setFilter] = useState("upcoming"); // available, expired, completed, upcoming
+  const [filter, setFilter] = useState("available");
   const [userResults, setUserResults] = useState({});
-  const userClassId = localStorage.getItem("userClassId");
+  const [questionCounts, setQuestionCounts] = useState({});
 
   useEffect(() => {
     fetchQuizzes();
@@ -27,17 +27,41 @@ const QuizList = () => {
       });
 
       if (response.data.success) {
-        // Filter quizzes by user's class
-        const filteredQuizzes = response.data.quizzes.filter(
-          (quiz) => quiz.classId._id === userClassId
-        );
-        setQuizzes(filteredQuizzes);
+        const quizzesData = response.data.quizzes || [];
+        setQuizzes(quizzesData);
+
+        // Fetch question count for each quiz
+        quizzesData.forEach((quiz) => {
+          fetchQuestionCount(quiz._id, token);
+        });
       }
     } catch (err) {
       setError("Failed to load quizzes");
       console.error("Error fetching quizzes:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchQuestionCount = async (quizId, token) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:4000/api/question/quiz/${quizId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (response.data.success) {
+        setQuestionCounts((prev) => ({
+          ...prev,
+          [quizId]: response.data.questions?.length || 0,
+        }));
+      }
+    } catch (err) {
+      console.error("Error fetching question count:", err);
     }
   };
 
@@ -58,11 +82,13 @@ const QuizList = () => {
         const resultsMap = {};
         response.data.results.forEach((result) => {
           // quizId is populated as an object, so we need to get its _id
-          const quizId =
-            typeof result.quizId === "object"
-              ? result.quizId._id
-              : result.quizId;
-          resultsMap[quizId] = result;
+          if (result.quizId) {
+            const quizId =
+              typeof result.quizId === "object"
+                ? result.quizId._id
+                : result.quizId;
+            resultsMap[quizId] = result;
+          }
         });
         setUserResults(resultsMap);
       }
@@ -72,6 +98,10 @@ const QuizList = () => {
   };
 
   const getQuizStatus = (quiz) => {
+    if (!quiz || !quiz.startDate || !quiz.expiryDate) {
+      return "expired";
+    }
+
     const now = new Date();
     const startDate = new Date(quiz.startDate);
     const expiryDate = new Date(quiz.expiryDate);
@@ -211,6 +241,12 @@ const QuizList = () => {
                   <p className="quiz-description">{quiz.description}</p>
 
                   <div className="quiz-details">
+                    <div className="detail-item">
+                      <span className="detail-label">Questions:</span>
+                      <span className="detail-value">
+                        {questionCounts[quiz._id] || 0}
+                      </span>
+                    </div>
                     <div className="detail-item">
                       <span className="detail-label">Duration:</span>
                       <span className="detail-value">{quiz.duration} mins</span>

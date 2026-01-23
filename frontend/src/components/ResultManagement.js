@@ -1,25 +1,48 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { resultAPI, quizAPI } from "../api";
+import { resultAPI, quizAPI, classAPI } from "../api";
 import "./ResultManagement.css";
 
 function ResultManagement() {
   const [results, setResults] = useState([]);
+  const [classes, setClasses] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
+  const [selectedClass, setSelectedClass] = useState("");
   const [selectedQuiz, setSelectedQuiz] = useState("");
-  const [filteredResults, setFilteredResults] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredQuizzes, setFilteredQuizzes] = useState([]);
+  const [submittedUsers, setSubmittedUsers] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchResults();
     fetchQuizzes();
+    fetchClasses();
   }, []);
 
   useEffect(() => {
-    if (selectedQuiz) {
-      setFilteredResults(results.filter((r) => r.quizId._id === selectedQuiz));
+    if (selectedClass) {
+      const filtered = quizzes.filter(
+        (quiz) => quiz.classId?.name === selectedClass,
+      );
+      setFilteredQuizzes(filtered);
+      setSelectedQuiz("");
+      setSubmittedUsers([]);
     } else {
-      setFilteredResults(results);
+      setFilteredQuizzes([]);
+      setSelectedQuiz("");
+      setSubmittedUsers([]);
+    }
+  }, [selectedClass, quizzes]);
+
+  useEffect(() => {
+    if (selectedQuiz) {
+      const usersForQuiz = results.filter(
+        (r) => r.quizId && r.quizId._id === selectedQuiz,
+      );
+      setSubmittedUsers(usersForQuiz);
+    } else {
+      setSubmittedUsers([]);
     }
   }, [selectedQuiz, results]);
 
@@ -28,7 +51,6 @@ function ResultManagement() {
       const result = await resultAPI.getAll();
       if (result.success) {
         setResults(result.results);
-        setFilteredResults(result.results);
       }
     } catch (error) {
       console.error("Error fetching results:", error);
@@ -43,6 +65,17 @@ function ResultManagement() {
       }
     } catch (error) {
       console.error("Error fetching quizzes:", error);
+    }
+  };
+
+  const fetchClasses = async () => {
+    try {
+      const result = await classAPI.getAll();
+      if (result.success) {
+        setClasses(result.classes);
+      }
+    } catch (error) {
+      console.error("Error fetching classes:", error);
     }
   };
 
@@ -71,21 +104,16 @@ function ResultManagement() {
     navigate("/admin/login");
   };
 
-  const getStats = () => {
-    const total = filteredResults.length;
-    const passed = filteredResults.filter((r) => r.isPassed).length;
-    const failed = total - passed;
-    const avgPercentage =
-      total > 0
-        ? (
-            filteredResults.reduce((sum, r) => sum + r.percentage, 0) / total
-          ).toFixed(2)
-        : 0;
-
-    return { total, passed, failed, avgPercentage };
+  const getUniqueClassNames = () => {
+    const classNames = ["BS", "MS", "PhD"];
+    return classNames.filter((className) =>
+      classes.some((cls) => cls.name === className),
+    );
   };
 
-  const stats = getStats();
+  const filteredClassNames = getUniqueClassNames().filter((className) =>
+    className.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
 
   return (
     <div className="dashboard-container">
@@ -105,49 +133,85 @@ function ResultManagement() {
       <div className="dashboard-content">
         <div className="page-header">
           <h2>Quiz Results</h2>
-          <div className="filter-section">
+        </div>
+
+        <div className="filter-section" style={{ marginBottom: "20px" }}>
+          <div style={{ marginBottom: "15px" }}>
+            <label style={{ fontWeight: "bold", marginRight: "10px" }}>
+              Search Classes:
+            </label>
+            <input
+              type="text"
+              placeholder="Search BS, MS, PhD..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                padding: "8px 12px",
+                border: "1px solid #ddd",
+                borderRadius: "4px",
+                width: "300px",
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: "15px" }}>
+            <label style={{ fontWeight: "bold", marginRight: "10px" }}>
+              Select Class:
+            </label>
             <select
-              value={selectedQuiz}
-              onChange={(e) => setSelectedQuiz(e.target.value)}
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
               className="quiz-filter"
+              style={{ padding: "8px 12px", minWidth: "200px" }}
             >
-              <option value="">All Quizzes</option>
-              {quizzes.map((quiz) => (
-                <option key={quiz._id} value={quiz._id}>
-                  {quiz.title}
+              <option value="">-- Select a Class --</option>
+              {filteredClassNames.map((className) => (
+                <option key={className} value={className}>
+                  {className}
                 </option>
               ))}
             </select>
           </div>
+
+          {selectedClass && filteredQuizzes.length > 0 && (
+            <div style={{ marginBottom: "15px" }}>
+              <label style={{ fontWeight: "bold", marginRight: "10px" }}>
+                Select Quiz:
+              </label>
+              <select
+                value={selectedQuiz}
+                onChange={(e) => setSelectedQuiz(e.target.value)}
+                className="quiz-filter"
+                style={{ padding: "8px 12px", minWidth: "300px" }}
+              >
+                <option value="">-- Select a Quiz --</option>
+                {filteredQuizzes.map((quiz) => (
+                  <option key={quiz._id} value={quiz._id}>
+                    {quiz.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {selectedClass && filteredQuizzes.length === 0 && (
+            <p style={{ color: "#666", fontStyle: "italic" }}>
+              No quizzes found for {selectedClass} class.
+            </p>
+          )}
         </div>
 
-        <div className="stats-grid">
-          <div className="stat-card">
-            <h3>{stats.total}</h3>
-            <p>Total Submissions</p>
-          </div>
-          <div className="stat-card">
-            <h3>{stats.passed}</h3>
-            <p>Passed</p>
-          </div>
-          <div className="stat-card">
-            <h3>{stats.failed}</h3>
-            <p>Failed</p>
-          </div>
-          <div className="stat-card">
-            <h3>{stats.avgPercentage}%</h3>
-            <p>Average Score</p>
-          </div>
-        </div>
-
-        <div className="table-container">
-          {filteredResults.length > 0 ? (
+        {selectedQuiz && submittedUsers.length > 0 && (
+          <div className="table-container">
+            <h3 style={{ marginBottom: "15px" }}>
+              Students Who Submitted This Quiz ({submittedUsers.length})
+            </h3>
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Student</th>
-                  <th>Quiz</th>
-                  <th>Marks Obtained</th>
+                  <th>Student Name</th>
+                  <th>Email</th>
+                  <th>Marks</th>
                   <th>Total Marks</th>
                   <th>Percentage</th>
                   <th>Status</th>
@@ -156,27 +220,35 @@ function ResultManagement() {
                 </tr>
               </thead>
               <tbody>
-                {filteredResults.map((result) => (
+                {submittedUsers.map((result) => (
                   <tr key={result._id}>
+                    <td>{result.userId?.name || "N/A"}</td>
+                    <td>{result.userId?.email || "N/A"}</td>
                     <td>
-                      <div>
-                        <div>{result.userId?.name || "N/A"}</div>
-                        <div style={{ fontSize: "12px", color: "#666" }}>
-                          {result.userId?.email || "N/A"}
-                        </div>
-                      </div>
+                      {result.obtainedMarks}
+                      {result.manualReviewPending ? " (pending)" : ""}
                     </td>
-                    <td>{result.quizId?.title || "N/A"}</td>
-                    <td>{result.obtainedMarks}</td>
                     <td>{result.totalMarks}</td>
-                    <td>{result.percentage.toFixed(2)}%</td>
+                    <td>
+                      {result.manualReviewPending
+                        ? "Pending"
+                        : `${result.percentage.toFixed(2)}%`}
+                    </td>
                     <td>
                       <span
                         className={`status ${
-                          result.isPassed ? "passed" : "failed"
+                          result.manualReviewPending
+                            ? "pending"
+                            : result.isPassed
+                              ? "passed"
+                              : "failed"
                         }`}
                       >
-                        {result.isPassed ? "Passed" : "Failed"}
+                        {result.manualReviewPending
+                          ? "Pending"
+                          : result.isPassed
+                            ? "Passed"
+                            : "Failed"}
                       </span>
                     </td>
                     <td>{new Date(result.submittedAt).toLocaleString()}</td>
@@ -185,23 +257,27 @@ function ResultManagement() {
                         onClick={() => handleViewDetails(result._id)}
                         className="btn-view"
                       >
-                        View
-                      </button>
-                      <button
-                        onClick={() => handleDelete(result._id)}
-                        className="btn-delete"
-                      >
-                        Delete
+                        {result.manualReviewPending
+                          ? "Review Submission"
+                          : "View Result"}
                       </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          ) : (
-            <p className="no-data">No results found.</p>
-          )}
-        </div>
+          </div>
+        )}
+
+        {selectedQuiz && submittedUsers.length === 0 && (
+          <p className="no-data">No students have submitted this quiz yet.</p>
+        )}
+
+        {!selectedClass && (
+          <p className="no-data">
+            Please select a class to view quizzes and results.
+          </p>
+        )}
       </div>
     </div>
   );

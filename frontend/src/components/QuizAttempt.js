@@ -53,12 +53,18 @@ const QuizAttempt = () => {
 
       if (resultResponse.data.success) {
         const userAttemptedQuiz = resultResponse.data.results.some((result) => {
-          const quizId_ = typeof result.quizId === 'object' ? result.quizId._id : result.quizId;
+          if (!result.quizId) return false;
+          const quizId_ =
+            typeof result.quizId === "object"
+              ? result.quizId._id
+              : result.quizId;
           return quizId_ === quizId;
         });
 
         if (userAttemptedQuiz) {
-          setError("You have already attempted this quiz. Each quiz can only be attempted once.");
+          setError(
+            "You have already attempted this quiz. Each quiz can only be attempted once.",
+          );
           setLoading(false);
           return;
         }
@@ -90,7 +96,15 @@ const QuizAttempt = () => {
       );
 
       if (questionsResponse.data.success) {
-        setQuestions(questionsResponse.data.questions);
+        const fetchedQuestions = questionsResponse.data.questions || [];
+        if (fetchedQuestions.length === 0) {
+          setError(
+            "No questions found for this quiz. Please contact your instructor.",
+          );
+        }
+        setQuestions(fetchedQuestions);
+      } else {
+        setError("Failed to load questions");
       }
     } catch (err) {
       setError("Failed to load quiz or questions");
@@ -135,6 +149,8 @@ const QuizAttempt = () => {
       const formattedAnswers = questions.map((q) => ({
         questionId: q._id,
         selectedAnswer: answers[q._id] || "",
+        // duplicate into typedAnswer for clarity; backend still reads selectedAnswer
+        typedAnswer: answers[q._id] || "",
       }));
 
       const response = await axios.post(
@@ -157,10 +173,12 @@ const QuizAttempt = () => {
         });
       } else {
         setError(response.data.message || "Failed to submit quiz");
+        console.error("Submission failed:", response.data);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to submit quiz");
-      console.error("Error submitting quiz:", err);
+      const errorMsg = err.response?.data?.message || "Failed to submit quiz";
+      setError(errorMsg);
+      console.error("Error submitting quiz:", err.response?.data || err);
     } finally {
       setSubmitting(false);
     }
@@ -176,6 +194,7 @@ const QuizAttempt = () => {
 
   const currentQuestion =
     questions.length > 0 ? questions[currentQuestionIndex] : null;
+  const currentQuestionType = currentQuestion?.questionType || "mcq";
   const answeredCount = Object.keys(answers).length;
 
   if (loading) {
@@ -231,28 +250,43 @@ const QuizAttempt = () => {
                   <p>{currentQuestion.questionText}</p>
                 </div>
 
-                <div className="options-list">
-                  {currentQuestion.options.map((option, index) => (
-                    <label key={index} className="option-label">
-                      <input
-                        type="radio"
-                        name={`question-${currentQuestion._id}`}
-                        value={option.optionText}
-                        checked={
-                          answers[currentQuestion._id] === option.optionText
-                        }
-                        onChange={() =>
-                          handleSelectAnswer(
-                            currentQuestion._id,
-                            option.optionText,
-                          )
-                        }
-                        className="option-input"
-                      />
-                      <span className="option-text">{option.optionText}</span>
-                    </label>
-                  ))}
-                </div>
+                {currentQuestionType === "text" ? (
+                  <div className="typed-question">
+                    <label className="typed-label">Type your answer</label>
+                    <textarea
+                      className="typed-input"
+                      rows="4"
+                      value={answers[currentQuestion._id] || ""}
+                      onChange={(e) =>
+                        handleSelectAnswer(currentQuestion._id, e.target.value)
+                      }
+                      placeholder="Enter your response here"
+                    />
+                  </div>
+                ) : (
+                  <div className="options-list">
+                    {currentQuestion.options.map((option, index) => (
+                      <label key={index} className="option-label">
+                        <input
+                          type="radio"
+                          name={`question-${currentQuestion._id}`}
+                          value={option.optionText}
+                          checked={
+                            answers[currentQuestion._id] === option.optionText
+                          }
+                          onChange={() =>
+                            handleSelectAnswer(
+                              currentQuestion._id,
+                              option.optionText,
+                            )
+                          }
+                          className="option-input"
+                        />
+                        <span className="option-text">{option.optionText}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
 
                 <div className="navigation-buttons">
                   <button

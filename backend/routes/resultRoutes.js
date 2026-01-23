@@ -7,6 +7,7 @@ import {
   getUserStats,
   getResultById,
   deleteResult,
+  reviewManualAnswer,
 } from "../controllers/resultController.js";
 import {
   authMiddleware,
@@ -24,6 +25,8 @@ resultRouter.get("/:id", authMiddleware, getResultById);
 // Admin routes
 resultRouter.get("/", adminAuthMiddleware, getAllResults);
 resultRouter.get("/quiz/:quizId", adminAuthMiddleware, getResultsByQuiz);
+resultRouter.get("/admin/:id", adminAuthMiddleware, getResultById);
+resultRouter.put("/:id/review", adminAuthMiddleware, reviewManualAnswer);
 resultRouter.delete("/:id", adminAuthMiddleware, deleteResult);
 
 export default resultRouter;

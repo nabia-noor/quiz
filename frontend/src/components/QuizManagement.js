@@ -30,13 +30,7 @@ function QuizManagement() {
     try {
       const result = await quizAPI.getAll();
       if (result.success) {
-        // Filter to show only upcoming quizzes
-        const now = new Date();
-        const upcomingQuizzes = result.quizzes.filter((quiz) => {
-          const startDate = new Date(quiz.startDate);
-          return startDate > now;
-        });
-        setQuizzes(upcomingQuizzes);
+        setQuizzes(result.quizzes);
       }
     } catch (error) {
       console.error("Error fetching quizzes:", error);
@@ -101,7 +95,7 @@ function QuizManagement() {
   const handleDelete = async (id) => {
     if (
       window.confirm(
-        "Are you sure? This will delete all questions associated with this quiz."
+        "Are you sure? This will delete all questions associated with this quiz.",
       )
     ) {
       try {

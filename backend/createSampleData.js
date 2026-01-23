@@ -7,7 +7,7 @@ import Question from "./models/questionModel.js";
 // Connect to MongoDB
 const connectDB = async () => {
   await mongoose.connect(
-    "mongodb+srv://quiz:helloworld123@cluster0.gnw23kh.mongodb.net/Quiz"
+    "mongodb+srv://quiz:helloworld123@cluster0.gnw23kh.mongodb.net/Quiz",
   );
   console.log("DB CONNECTED");
 };
@@ -115,7 +115,10 @@ const createSampleData = async () => {
             { optionText: "Object-Oriented Programming", isCorrect: true },
             { optionText: "Open Operating Protocol", isCorrect: false },
             { optionText: "Output Oriented Process", isCorrect: false },
-            { optionText: "Operation Optimization Procedure", isCorrect: false },
+            {
+              optionText: "Operation Optimization Procedure",
+              isCorrect: false,
+            },
           ],
           marks: 10,
           order: 5,
@@ -219,7 +222,10 @@ const createSampleData = async () => {
             },
             { optionText: "High Tech Markup Language", isCorrect: false },
             { optionText: "Home Tool Markup Language", isCorrect: false },
-            { optionText: "Hyperlinks and Text Markup Language", isCorrect: false },
+            {
+              optionText: "Hyperlinks and Text Markup Language",
+              isCorrect: false,
+            },
           ],
           marks: 10,
           order: 1,
@@ -238,8 +244,7 @@ const createSampleData = async () => {
         },
         {
           quizId: quiz2._id,
-          questionText:
-            "Which tag is used for the main heading in HTML?",
+          questionText: "Which tag is used for the main heading in HTML?",
           options: [
             { optionText: "<h1>", isCorrect: true },
             { optionText: "<heading>", isCorrect: false },
@@ -287,11 +292,11 @@ const createSampleData = async () => {
         },
         {
           quizId: quiz2._id,
-          questionText: "What is the correct way to include an external CSS file?",
+          questionText:
+            "What is the correct way to include an external CSS file?",
           options: [
             {
-              optionText:
-                '<link rel="stylesheet" href="style.css">',
+              optionText: '<link rel="stylesheet" href="style.css">',
               isCorrect: true,
             },
             { optionText: "<css src='style.css'>", isCorrect: false },

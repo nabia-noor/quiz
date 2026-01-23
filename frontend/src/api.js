@@ -216,8 +216,20 @@ export const resultAPI = {
   },
 
   getById: async (id) => {
-    const response = await fetch(`${API_URL}/result/${id}`, {
+    const response = await fetch(`${API_URL}/result/admin/${id}`, {
       headers: { Authorization: `Bearer ${getAdminToken()}` },
+    });
+    return response.json();
+  },
+
+  review: async (id, data) => {
+    const response = await fetch(`${API_URL}/result/${id}/review`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getAdminToken()}`,
+      },
+      body: JSON.stringify(data),
     });
     return response.json();
   },

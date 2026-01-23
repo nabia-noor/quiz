@@ -11,6 +11,8 @@ import ClassManagement from "./components/ClassManagement";
 import QuizManagement from "./components/QuizManagement";
 import QuestionManagement from "./components/QuestionManagement";
 import ResultManagement from "./components/ResultManagement";
+import AdminResultDetail from "./components/AdminResultDetail";
+import UserQuestions from "./components/UserQuestions";
 import UserLogin from "./components/UserLogin";
 import UserDashboard from "./components/UserDashboard";
 import QuizList from "./components/QuizList";
@@ -98,6 +100,14 @@ function App() {
             }
           />
           <Route
+            path="/user/questions"
+            element={
+              <UserProtectedRoute>
+                <UserQuestions />
+              </UserProtectedRoute>
+            }
+          />
+          <Route
             path="/user/quiz/:quizId"
             element={
               <UserProtectedRoute>
@@ -163,6 +173,14 @@ function App() {
             element={
               <AdminProtectedRoute>
                 <ResultManagement />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/results/:id"
+            element={
+              <AdminProtectedRoute>
+                <AdminResultDetail />
               </AdminProtectedRoute>
             }
           />

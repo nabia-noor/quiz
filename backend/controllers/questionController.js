@@ -4,13 +4,65 @@ import Quiz from "../models/quizModel.js";
 // Create Question
 export const createQuestion = async (req, res) => {
   try {
-    const { quizId, questionText, options, marks, order } = req.body;
+    const {
+      quizId,
+      questionText,
+      options = [],
+      marks,
+      order,
+      questionType = "mcq",
+      classId,
+      startDate,
+      expiryDate,
+      isActive = true,
+    } = req.body;
 
-    if (!quizId || !questionText || !options || options.length < 2) {
+    if (!quizId || !questionText) {
       return res.status(400).json({
         success: false,
-        message: "Quiz ID, question text, and at least 2 options are required",
+        message: "Quiz ID and question text are required",
       });
+    }
+
+    const normalizedType = questionType === "text" ? "text" : "mcq";
+
+    // Optional date validation
+    if (startDate && isNaN(new Date(startDate))) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid start date",
+      });
+    }
+
+    if (expiryDate && isNaN(new Date(expiryDate))) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid expiry date",
+      });
+    }
+
+    if (startDate && expiryDate && new Date(startDate) > new Date(expiryDate)) {
+      return res.status(400).json({
+        success: false,
+        message: "Start date cannot be after expiry date",
+      });
+    }
+
+    if (normalizedType === "mcq") {
+      if (!options || options.length < 2) {
+        return res.status(400).json({
+          success: false,
+          message: "MCQ questions need at least 2 options",
+        });
+      }
+
+      const hasCorrectOption = options.some((opt) => opt.isCorrect);
+      if (!hasCorrectOption) {
+        return res.status(400).json({
+          success: false,
+          message: "Please mark one option as correct for MCQ questions",
+        });
+      }
     }
 
     // Verify quiz exists
@@ -22,12 +74,19 @@ export const createQuestion = async (req, res) => {
       });
     }
 
+    const sanitizedOptions = normalizedType === "mcq" ? options : [];
+
     const newQuestion = new Question({
+      questionType: normalizedType,
       quizId,
+      classId: classId || quiz.classId,
       questionText,
-      options,
+      options: sanitizedOptions,
       marks,
       order,
+      startDate: startDate ? new Date(startDate) : undefined,
+      expiryDate: expiryDate ? new Date(expiryDate) : undefined,
+      isActive,
     });
 
     await newQuestion.save();
@@ -97,20 +156,90 @@ export const getQuestionById = async (req, res) => {
 export const updateQuestion = async (req, res) => {
   try {
     const { id } = req.params;
-    const { questionText, options, marks, order } = req.body;
+    const {
+      questionText,
+      options = [],
+      marks,
+      order,
+      questionType,
+      classId,
+      startDate,
+      expiryDate,
+      isActive,
+    } = req.body;
 
-    const updatedQuestion = await Question.findByIdAndUpdate(
-      id,
-      { questionText, options, marks, order },
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedQuestion) {
+    const existingQuestion = await Question.findById(id);
+    if (!existingQuestion) {
       return res.status(404).json({
         success: false,
         message: "Question not found",
       });
     }
+
+    const normalizedType = questionType
+      ? questionType === "text"
+        ? "text"
+        : "mcq"
+      : existingQuestion.questionType || "mcq";
+
+    if (startDate && isNaN(new Date(startDate))) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid start date",
+      });
+    }
+
+    if (expiryDate && isNaN(new Date(expiryDate))) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid expiry date",
+      });
+    }
+
+    if (startDate && expiryDate && new Date(startDate) > new Date(expiryDate)) {
+      return res.status(400).json({
+        success: false,
+        message: "Start date cannot be after expiry date",
+      });
+    }
+
+    const optionsToUseRaw = options.length ? options : existingQuestion.options;
+    const optionsToUse = normalizedType === "mcq" ? optionsToUseRaw : [];
+
+    if (normalizedType === "mcq") {
+      if (!optionsToUse || optionsToUse.length < 2) {
+        return res.status(400).json({
+          success: false,
+          message: "MCQ questions need at least 2 options",
+        });
+      }
+
+      const hasCorrectOption = optionsToUse.some((opt) => opt.isCorrect);
+      if (!hasCorrectOption) {
+        return res.status(400).json({
+          success: false,
+          message: "Please mark one option as correct for MCQ questions",
+        });
+      }
+    }
+
+    existingQuestion.questionText =
+      questionText ?? existingQuestion.questionText;
+    existingQuestion.options = optionsToUse;
+    existingQuestion.marks = marks ?? existingQuestion.marks;
+    existingQuestion.order = order ?? existingQuestion.order;
+    existingQuestion.questionType = normalizedType;
+    existingQuestion.classId = classId ?? existingQuestion.classId;
+    existingQuestion.startDate = startDate
+      ? new Date(startDate)
+      : existingQuestion.startDate;
+    existingQuestion.expiryDate = expiryDate
+      ? new Date(expiryDate)
+      : existingQuestion.expiryDate;
+    existingQuestion.isActive =
+      typeof isActive === "boolean" ? isActive : existingQuestion.isActive;
+
+    const updatedQuestion = await existingQuestion.save();
 
     return res.status(200).json({
       success: true,
@@ -179,9 +308,32 @@ export const bulkCreateQuestions = async (req, res) => {
       });
     }
 
+    for (const q of questions) {
+      const type = q.questionType === "text" ? "text" : "mcq";
+      const opts = q.options || [];
+
+      if (type === "mcq") {
+        if (!opts || opts.length < 2) {
+          return res.status(400).json({
+            success: false,
+            message: "Every MCQ needs at least 2 options",
+          });
+        }
+        const hasCorrectOption = opts.some((opt) => opt.isCorrect);
+        if (!hasCorrectOption) {
+          return res.status(400).json({
+            success: false,
+            message: "Every MCQ needs a correct option marked",
+          });
+        }
+      }
+    }
+
     const questionsToInsert = questions.map((q) => ({
       quizId,
       ...q,
+      options: q.questionType === "mcq" ? q.options || [] : [],
+      questionType: q.questionType === "text" ? "text" : "mcq",
     }));
 
     const createdQuestions = await Question.insertMany(questionsToInsert);

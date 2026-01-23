@@ -37,7 +37,7 @@ const UserDashboard = () => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
 
         console.log("Stats response:", response.data);
@@ -74,7 +74,9 @@ const UserDashboard = () => {
       <header className="user-dashboard-header">
         <div className="header-left">
           <h1>📚 Quiz Application</h1>
-          <p>Welcome, <strong>{userName}</strong>!</p>
+          <p>
+            Welcome, <strong>{userName}</strong>!
+          </p>
         </div>
         <div className="header-right">
           <button className="logout-btn" onClick={handleLogout}>
@@ -153,6 +155,12 @@ const UserDashboard = () => {
                 onClick={() => navigate("/user/quizzes")}
               >
                 🚀 Start New Quiz
+              </button>
+              <button
+                className="action-btn secondary"
+                onClick={() => navigate("/user/questions")}
+              >
+                ❓ Browse Questions
               </button>
               <button
                 className="action-btn secondary"

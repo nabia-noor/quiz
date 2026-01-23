@@ -50,14 +50,18 @@ function Dashboard() {
 
       // Filter by selected class and year if available
       if (selectedClass && selectedYear) {
-        const classData = classes.find((c) => c.name === selectedClass && c.semester === selectedYear);
+        const classData = classes.find(
+          (c) => c.name === selectedClass && c.semester === selectedYear,
+        );
         if (classData) {
           filteredQuizzes = filteredQuizzes.filter(
-            (q) => q.classId._id === classData._id
+            (q) => q.classId._id === classData._id,
           );
 
           const allowedQuizIds = new Set(filteredQuizzes.map((q) => q._id));
-          resultsList = resultsList.filter((r) => allowedQuizIds.has(r.quizId?._id || r.quizId));
+          resultsList = resultsList.filter((r) =>
+            allowedQuizIds.has(r.quizId?._id || r.quizId),
+          );
         }
       }
 
@@ -91,7 +95,6 @@ function Dashboard() {
           <Link to="/admin/dashboard">Dashboard</Link>
           <Link to="/admin/classes">Classes</Link>
           <Link to="/admin/quizzes">Quizzes</Link>
-          <Link to="/admin/questions">Questions</Link>
           <Link to="/admin/results">Results</Link>
           <button onClick={handleLogout} className="btn-logout">
             Logout

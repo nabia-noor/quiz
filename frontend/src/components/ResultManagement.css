@@ -4,7 +4,11 @@
   align-items: center;
   margin-bottom: 24px;
   padding: 14px 18px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.08) 0%,
+    rgba(118, 75, 162, 0.08) 100%
+  );
   border-radius: 12px;
   border: 1px solid #e7e7ef;
 }
@@ -87,6 +91,15 @@
 .status.failed {
   background: #f8d7da;
   color: #721c24;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status.pending {
+  background: #fff3cd;
+  color: #856404;
   padding: 4px 12px;
   border-radius: 12px;
   font-size: 12px;

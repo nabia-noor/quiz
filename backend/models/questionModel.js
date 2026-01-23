@@ -2,10 +2,19 @@ import mongoose from "mongoose";
 
 const questionSchema = new mongoose.Schema(
   {
+    questionType: {
+      type: String,
+      enum: ["mcq", "text"],
+      default: "mcq",
+    },
     quizId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Quiz",
       required: true,
+    },
+    classId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Class",
     },
     questionText: {
       type: String,
@@ -33,10 +42,20 @@ const questionSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    startDate: {
+      type: Date,
+    },
+    expiryDate: {
+      type: Date,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export default mongoose.models.Question ||
