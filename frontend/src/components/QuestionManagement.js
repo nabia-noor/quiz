@@ -155,6 +155,20 @@ function QuestionManagement() {
     }
   };
 
+  const getTotalAllocatedMarks = () => {
+    return questions.reduce((sum, q) => sum + (q.marks || 0), 0);
+  };
+
+  const getAvailableMarks = () => {
+    if (!quiz) return 0;
+    return Math.max(0, quiz.totalMarks - getTotalAllocatedMarks());
+  };
+
+  const isMarksCompleted = () => {
+    if (!quiz) return false;
+    return getTotalAllocatedMarks() >= quiz.totalMarks;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -168,6 +182,22 @@ function QuestionManagement() {
 
     if (!quizIdToUse) {
       alert("Please select a quiz");
+      return;
+    }
+
+    // Check if marks are already completed (only for new questions, not editing)
+    if (!editingId && isMarksCompleted()) {
+      alert(
+        "Cannot add more questions. Total marks have been completed.",
+      );
+      return;
+    }
+
+    // Check if the new question's marks would exceed available marks
+    if (!editingId && Number(formData.marks) > getAvailableMarks()) {
+      alert(
+        `Cannot add this question. Only ${getAvailableMarks()} marks available. This question requires ${formData.marks} marks.`,
+      );
       return;
     }
 
@@ -306,6 +336,26 @@ function QuestionManagement() {
               </p>
             )}
 
+            {selectedQuizId && quiz && (
+              <div className="marks-allocation" style={{ marginTop: "10px" }}>
+                <div className="marks-info">
+                  <span>
+                    <strong>Allocated Marks:</strong> {getTotalAllocatedMarks()}/
+                    {quiz.totalMarks}
+                  </span>
+                  <span style={{ marginLeft: "20px" }}>
+                    <strong>Available Marks:</strong> {getAvailableMarks()}
+                  </span>
+                </div>
+                {isMarksCompleted() && (
+                  <div className="marks-completed-message">
+                    ✓ You cannot add more questions. Total marks have been
+                    completed.
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="quiz-selector" style={{ marginTop: "10px" }}>
               <label>Select Quiz: </label>
               <select
@@ -324,6 +374,12 @@ function QuestionManagement() {
           <button
             onClick={() => setShowForm(!showForm)}
             className="btn-primary"
+            disabled={isMarksCompleted() && !editingId && !showForm}
+            title={
+              isMarksCompleted() && !editingId && !showForm
+                ? "Cannot add questions - total marks completed"
+                : ""
+            }
           >
             {showForm ? "Cancel" : "Add Question"}
           </button>
@@ -395,8 +451,14 @@ function QuestionManagement() {
                     value={formData.marks}
                     onChange={handleQuestionChange}
                     min="1"
+                    max={editingId ? undefined : getAvailableMarks()}
                     required
                   />
+                  {!editingId && quiz && getAvailableMarks() < quiz.totalMarks && (
+                    <p className="helper-text">
+                      Available marks: {getAvailableMarks()} / {quiz.totalMarks}
+                    </p>
+                  )}
                 </div>
               </div>
 

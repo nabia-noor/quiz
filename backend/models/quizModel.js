@@ -16,6 +16,11 @@ const quizSchema = new mongoose.Schema(
       ref: "Class",
       required: true,
     },
+    subjectId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subject",
+      default: null,
+    },
     duration: {
       type: Number, // in minutes
       required: true,
@@ -41,12 +46,17 @@ const quizSchema = new mongoose.Schema(
     },
     isActive: {
       type: Boolean,
-      default: true,
+      default: false, // quizzes start as draft until published
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
-      required: true,
+      default: null,
+    },
+    teacherId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Teacher",
+      default: null,
     },
   },
   {

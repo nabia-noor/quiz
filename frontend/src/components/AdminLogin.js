@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { adminAPI } from "../api";
 import "./AdminLogin.css";
 
@@ -65,6 +65,20 @@ function AdminLogin() {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
+        <div className="login-links">
+          <p>
+            Are you a teacher?{" "}
+            <Link to="/teacher/login" className="link">
+              Teacher Login
+            </Link>
+          </p>
+          <p>
+            Are you a student?{" "}
+            <Link to="/user/login" className="link">
+              Student Login
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

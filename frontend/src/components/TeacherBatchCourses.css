@@ -1,0 +1,66 @@
+.teacher-batch-courses-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.teacher-batch-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: #1f2937;
+  color: #fff;
+}
+
+.teacher-batch-nav .nav-links a,
+.teacher-batch-nav .nav-links button {
+  margin-left: 12px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.courses-content {
+  padding: 24px;
+}
+
+.loading,
+.no-courses,
+.alert {
+  margin: 16px 0;
+}
+
+.courses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.course-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  background: #fff;
+}
+
+.course-title {
+  margin: 0 0 8px 0;
+}
+
+.course-meta,
+.course-dates {
+  display: flex;
+  gap: 12px;
+  font-size: 14px;
+  color: #4b5563;
+  margin-bottom: 8px;
+}
+
+.course-actions .btn-primary {
+  display: inline-block;
+  padding: 8px 12px;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 4px;
+  text-decoration: none;
+}

@@ -6,7 +6,7 @@ import axios from "axios";
 const QuizList = () => {
   const navigate = useNavigate();
   const [quizzes, setQuizzes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("available");
   const [userResults, setUserResults] = useState({});

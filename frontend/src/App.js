@@ -10,14 +10,22 @@ import Dashboard from "./components/Dashboard";
 import ClassManagement from "./components/ClassManagement";
 import QuizManagement from "./components/QuizManagement";
 import QuestionManagement from "./components/QuestionManagement";
-import ResultManagement from "./components/ResultManagement";
-import AdminResultDetail from "./components/AdminResultDetail";
 import UserQuestions from "./components/UserQuestions";
 import UserLogin from "./components/UserLogin";
 import UserDashboard from "./components/UserDashboard";
 import QuizList from "./components/QuizList";
 import QuizAttempt from "./components/QuizAttempt";
 import UserResults from "./components/UserResults";
+import TeacherLogin from "./components/TeacherLogin";
+import TeacherDashboard from "./components/TeacherDashboard";
+import TeacherManagement from "./components/TeacherManagement";
+import TeacherProfile from "./components/TeacherProfile";
+import TeacherCreateQuiz from "./components/TeacherCreateQuiz";
+import TeacherResults from "./components/TeacherResults";
+import TeacherBatchCourses from "./components/TeacherBatchCourses";
+import TeacherQuizManagement from "./components/TeacherQuizManagement";
+import TeacherQuizAttempts from "./components/TeacherQuizAttempts";
+import TeacherMarkQuiz from "./components/TeacherMarkQuiz";
 import "./App.css";
 
 // Protected Route Components
@@ -44,16 +52,49 @@ function AdminProtectedRoute({ children }) {
 function UserProtectedRoute({ children }) {
   const userToken = localStorage.getItem("userToken");
   const adminToken = localStorage.getItem("adminToken");
+  const teacherToken = localStorage.getItem("teacherToken");
 
   // Only user can access user pages
   if (!userToken) {
     return <Navigate to="/user/login" replace />;
   }
 
-  // If admin token also exists, remove it (ensure only one role at a time)
+  // If admin or teacher token also exists, remove it (ensure only one role at a time)
   if (adminToken) {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminData");
+  }
+  if (teacherToken) {
+    localStorage.removeItem("teacherToken");
+    localStorage.removeItem("teacherId");
+    localStorage.removeItem("teacherName");
+    localStorage.removeItem("teacherEmail");
+    localStorage.removeItem("teacherData");
+  }
+
+  return children;
+}
+
+function TeacherProtectedRoute({ children }) {
+  const teacherToken = localStorage.getItem("teacherToken");
+  const adminToken = localStorage.getItem("adminToken");
+  const userToken = localStorage.getItem("userToken");
+
+  // Only teacher can access teacher pages
+  if (!teacherToken) {
+    return <Navigate to="/teacher/login" replace />;
+  }
+
+  // If admin or user token also exists, remove it (ensure only one role at a time)
+  if (adminToken) {
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminData");
+  }
+  if (userToken) {
+    localStorage.removeItem("userToken");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
   }
 
   return children;
@@ -64,9 +105,13 @@ function App() {
   const RootRedirect = () => {
     const adminToken = localStorage.getItem("adminToken");
     const userToken = localStorage.getItem("userToken");
+    const teacherToken = localStorage.getItem("teacherToken");
 
     if (adminToken) {
       return <Navigate to="/admin/dashboard" replace />;
+    }
+    if (teacherToken) {
+      return <Navigate to="/teacher/dashboard" replace />;
     }
     if (userToken) {
       return <Navigate to="/user/dashboard" replace />;
@@ -137,6 +182,22 @@ function App() {
             }
           />
           <Route
+            path="/admin/teachers"
+            element={
+              <AdminProtectedRoute>
+                <TeacherManagement />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/teacher/:id"
+            element={
+              <AdminProtectedRoute>
+                <TeacherProfile />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
             path="/admin/classes"
             element={
               <AdminProtectedRoute>
@@ -168,6 +229,8 @@ function App() {
               </AdminProtectedRoute>
             }
           />
+          {/* Admin Results routes REMOVED - Quiz submissions are only accessible to teachers */}
+          {/* 
           <Route
             path="/admin/results"
             element={
@@ -182,6 +245,68 @@ function App() {
               <AdminProtectedRoute>
                 <AdminResultDetail />
               </AdminProtectedRoute>
+            }
+          />
+          */}
+
+          {/* Teacher Routes */}
+          <Route path="/teacher/login" element={<TeacherLogin />} />
+          <Route
+            path="/teacher/dashboard"
+            element={
+              <TeacherProtectedRoute>
+                <TeacherDashboard />
+              </TeacherProtectedRoute>
+            }
+          />
+          <Route
+            path="/teacher/create-quiz"
+            element={
+              <TeacherProtectedRoute>
+                <TeacherCreateQuiz />
+              </TeacherProtectedRoute>
+            }
+          />
+          <Route
+            path="/teacher/quiz/:quizId"
+            element={
+              <TeacherProtectedRoute>
+                <TeacherQuizManagement />
+              </TeacherProtectedRoute>
+            }
+          />
+          <Route
+            path="/teacher/results"
+            element={
+              <TeacherProtectedRoute>
+                <TeacherResults />
+              </TeacherProtectedRoute>
+            }
+          />
+          <Route
+            path="/teacher/quiz/:quizId/attempts"
+            element={
+              <TeacherProtectedRoute>
+                <TeacherQuizAttempts />
+              </TeacherProtectedRoute>
+            }
+          />
+          <Route
+            path="/teacher/result/:resultId/mark"
+            element={
+              <TeacherProtectedRoute>
+                <TeacherMarkQuiz />
+              </TeacherProtectedRoute>
+            }
+          />
+
+          {/* Teacher: View courses for a specific batch */}
+          <Route
+            path="/teacher/batch/:classId"
+            element={
+              <TeacherProtectedRoute>
+                <TeacherBatchCourses />
+              </TeacherProtectedRoute>
             }
           />
 

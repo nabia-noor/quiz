@@ -98,7 +98,7 @@ export const submitQuiz = async (req, res) => {
         let isCorrect = false;
         let marksObtained = 0;
 
-        if (qType === "mcq") {
+        if (qType === "mcq" || qType === "truefalse") {
           const correctOption = question.options.find((opt) => opt.isCorrect);
           if (
             correctOption &&
@@ -119,7 +119,7 @@ export const submitQuiz = async (req, res) => {
             evaluatedOptions: [],
           });
         } else {
-          // Text type question - requires manual review
+          // Text type or typed answer question - requires manual review
           manualReviewNeeded = true;
 
           processedAnswers.push({
@@ -271,26 +271,14 @@ export const reviewManualAnswer = async (req, res) => {
   }
 };
 
-// Get All Results (Admin)
+// Get All Results (Admin) - RESTRICTED: Admins should not see student quiz submissions
 export const getAllResults = async (req, res) => {
   try {
-    const results = await Result.find()
-      .populate("userId", "name email")
-      .populate("quizId", "title totalMarks")
-      .sort({ createdAt: -1 });
-
-    const sanitizedResults = results.map((doc) => {
-      const obj = doc.toObject();
-      const derivedTotal = calculateTotalMarks(obj.quizId);
-      if (derivedTotal > 0) {
-        obj.totalMarks = derivedTotal;
-      }
-      return obj;
-    });
-
-    return res.status(200).json({
-      success: true,
-      results: sanitizedResults,
+    // Admins should not have access to student quiz submissions
+    // Only aggregate statistics are allowed, not individual attempts
+    return res.status(403).json({
+      success: false,
+      message: "Access denied. Quiz submissions are only accessible to the quiz creator (teacher).",
     });
   } catch (error) {
     return res.status(500).json({
@@ -301,28 +289,14 @@ export const getAllResults = async (req, res) => {
   }
 };
 
-// Get Results by Quiz (Admin)
+// Get Results by Quiz (Admin) - RESTRICTED: Admins should not see student quiz submissions
 export const getResultsByQuiz = async (req, res) => {
   try {
-    const { quizId } = req.params;
-
-    const results = await Result.find({ quizId })
-      .populate("userId", "name email")
-      .populate("quizId", "title totalMarks")
-      .sort({ obtainedMarks: -1 });
-
-    const sanitizedResults = results.map((doc) => {
-      const obj = doc.toObject();
-      const derivedTotal = calculateTotalMarks(obj.quizId);
-      if (derivedTotal > 0) {
-        obj.totalMarks = derivedTotal;
-      }
-      return obj;
-    });
-
-    return res.status(200).json({
-      success: true,
-      results: sanitizedResults,
+    // Admins should not have access to student quiz submissions
+    // Only the quiz creator (teacher) can view submissions
+    return res.status(403).json({
+      success: false,
+      message: "Access denied. Quiz submissions are only accessible to the quiz creator (teacher).",
     });
   } catch (error) {
     return res.status(500).json({
@@ -481,6 +455,289 @@ export const deleteResult = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Result deleted successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// Get Quiz Attempts for Teacher (students who attempted a quiz)
+export const getQuizAttemptsForTeacher = async (req, res) => {
+  try {
+    const { quizId } = req.params;
+    const teacherId = req.teacherId;
+
+    // Verify the quiz belongs to this teacher
+    const quiz = await Quiz.findById(quizId);
+    if (!quiz) {
+      return res.status(404).json({
+        success: false,
+        message: "Quiz not found",
+      });
+    }
+
+    // Check if quiz is created by this teacher or if it's an admin quiz
+    const isTeacherQuiz = quiz.teacherId && quiz.teacherId.toString() === teacherId.toString();
+    const isAdminQuiz = quiz.createdBy && quiz.createdBy.toString() === teacherId.toString();
+
+    if (!isTeacherQuiz && !isAdminQuiz) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to view attempts for this quiz",
+      });
+    }
+
+    // Get all attempts for this quiz
+    const attempts = await Result.find({ quizId })
+      .populate("userId", "name email")
+      .sort({ submittedAt: -1 });
+
+    const formattedAttempts = attempts.map((attempt) => ({
+      _id: attempt._id,
+      studentId: attempt.userId._id,
+      studentName: attempt.userId.name,
+      studentEmail: attempt.userId.email,
+      submittedAt: attempt.submittedAt,
+      totalMarks: attempt.totalMarks,
+      obtainedMarks: attempt.obtainedMarks,
+      percentage: attempt.percentage,
+      isPassed: attempt.isPassed,
+      reviewStatus: attempt.reviewStatus,
+      markedAt: attempt.markedAt,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      attempts: formattedAttempts,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// Get Student Answer Details for Teacher Review
+export const getStudentAnswerDetails = async (req, res) => {
+  try {
+    const { resultId } = req.params;
+    const teacherId = req.teacherId;
+
+    // Get the result with all details
+    const result = await Result.findById(resultId)
+      .populate("userId", "name email")
+      .populate("quizId", "title totalMarks passingMarks description createdBy teacherId")
+      .populate("answers.questionId", "questionText options questionType marks");
+
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: "Result not found",
+      });
+    }
+
+    // Verify the quiz belongs to this teacher
+    if (!result.quizId) {
+      return res.status(404).json({
+        success: false,
+        message: "Quiz not found",
+      });
+    }
+
+    const quiz = result.quizId;
+    const isTeacherQuiz = quiz.teacherId && quiz.teacherId.toString() === teacherId.toString();
+    const isAdminQuiz = quiz.createdBy && quiz.createdBy.toString() === teacherId.toString();
+
+    if (!isTeacherQuiz && !isAdminQuiz) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to view this result",
+      });
+    }
+
+    // Recalculate total marks from questions if needed
+    let totalMarks = result.totalMarks;
+    if (!totalMarks || totalMarks === 0) {
+      const questions = await Question.find({ quizId: result.quizId._id });
+      totalMarks = questions.reduce((sum, q) => sum + (q.marks || 0), 0);
+    }
+
+    return res.status(200).json({
+      success: true,
+      result: {
+        resultId: result._id,
+        studentId: result.userId._id,
+        studentName: result.userId.name,
+        studentEmail: result.userId.email,
+        quizId: result.quizId._id,
+        quizTitle: result.quizId.title,
+        totalMarks: totalMarks,
+        obtainedMarks: result.obtainedMarks,
+        percentage: result.percentage,
+        isPassed: result.isPassed,
+        submittedAt: result.submittedAt,
+        reviewStatus: result.reviewStatus,
+        reviewComments: result.reviewComments || "",
+        answers: result.answers.map((ans) => ({
+          questionId: ans.questionId._id,
+          questionText: ans.questionId.questionText,
+          questionType: ans.questionId.questionType || "mcq",
+          marks: ans.questionId.marks,
+          options: ans.questionId.options,
+          selectedAnswer: ans.selectedAnswer,
+          typedAnswer: ans.typedAnswer,
+          isCorrect: ans.isCorrect,
+          marksObtained: ans.marksObtained,
+          requiresManualReview: ans.requiresManualReview,
+        })),
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// Mark Quiz and Update Scores
+export const markQuizForTeacher = async (req, res) => {
+  try {
+    const { resultId } = req.params;
+    const { answers, reviewComments } = req.body;
+    const teacherId = req.teacherId;
+
+    if (!answers || !Array.isArray(answers)) {
+      return res.status(400).json({
+        success: false,
+        message: "answers array is required",
+      });
+    }
+
+    // Get the result
+    const result = await Result.findById(resultId).populate("quizId");
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: "Result not found",
+      });
+    }
+
+    // Verify teacher owns this quiz
+    const quiz = result.quizId;
+    const isTeacherQuiz = quiz.teacherId && quiz.teacherId.toString() === teacherId.toString();
+    const isAdminQuiz = quiz.createdBy && quiz.createdBy.toString() === teacherId.toString();
+
+    if (!quiz || (!isTeacherQuiz && !isAdminQuiz)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to mark this quiz",
+      });
+    }
+
+    // Update answer marks
+    let totalObtainedMarks = 0;
+    for (const answer of answers) {
+      const resultAnswer = result.answers.find(
+        (a) => a.questionId.toString() === answer.questionId,
+      );
+
+      if (resultAnswer) {
+        // For MCQ/TrueFalse, marks are already calculated
+        // For text questions, teacher can override marks
+        if (answer.marksAwarded !== undefined) {
+          const question = await Question.findById(answer.questionId);
+          const maxMarks = question ? question.marks : 0;
+          resultAnswer.marksObtained = Math.min(
+            Number(answer.marksAwarded) || 0,
+            maxMarks,
+          );
+          resultAnswer.requiresManualReview = false;
+        }
+        totalObtainedMarks += resultAnswer.marksObtained;
+      }
+    }
+
+    // Recalculate percentage and pass status
+    const totalMarks = result.totalMarks;
+    const percentage =
+      totalMarks > 0 ? (totalObtainedMarks / totalMarks) * 100 : 0;
+    const isPassed = totalObtainedMarks >= (quiz.passingMarks || 0);
+
+    result.obtainedMarks = totalObtainedMarks;
+    result.percentage = percentage;
+    result.isPassed = isPassed;
+    result.markedBy = teacherId;
+    result.markedAt = new Date();
+    result.reviewStatus = "marked";
+    result.reviewComments = reviewComments || "";
+    result.manualReviewPending = false;
+
+    await result.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Quiz marked successfully",
+      result: {
+        resultId: result._id,
+        obtainedMarks: result.obtainedMarks,
+        percentage: result.percentage,
+        isPassed: result.isPassed,
+        reviewStatus: result.reviewStatus,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// Publish Result (make visible to student)
+export const publishResultForTeacher = async (req, res) => {
+  try {
+    const { resultId } = req.params;
+    const teacherId = req.teacherId;
+
+    const result = await Result.findById(resultId).populate("quizId");
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: "Result not found",
+      });
+    }
+
+    // Verify teacher owns this quiz
+    const quiz = result.quizId;
+    const isTeacherQuiz = quiz.teacherId && quiz.teacherId.toString() === teacherId.toString();
+    const isAdminQuiz = quiz.createdBy && quiz.createdBy.toString() === teacherId.toString();
+
+    if (!quiz || (!isTeacherQuiz && !isAdminQuiz)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to publish this result",
+      });
+    }
+
+    result.reviewStatus = "published";
+    await result.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Result published successfully",
+      result: {
+        resultId: result._id,
+        reviewStatus: result.reviewStatus,
+      },
     });
   } catch (error) {
     return res.status(500).json({

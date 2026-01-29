@@ -56,6 +56,25 @@ const resultSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    markedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Teacher",
+      default: null,
+    },
+    markedAt: {
+      type: Date,
+      default: null,
+    },
+    manualMarksAwarded: {
+      type: Number,
+      default: 0,
+    },
+    reviewStatus: {
+      type: String,
+      enum: ["pending", "in-progress", "marked", "published"],
+      default: "pending",
+    },
+    reviewComments: String,
   },
   {
     timestamps: true,

@@ -7,7 +7,7 @@ function AdminResultDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [awardedMarks, setAwardedMarks] = useState({});
   const [savingMap, setSavingMap] = useState({});
@@ -18,7 +18,6 @@ function AdminResultDetail() {
   }, [id]);
 
   const fetchResult = async () => {
-    setLoading(true);
     setError("");
     setMessage("");
     try {
@@ -217,14 +216,23 @@ function AdminResultDetail() {
                       >
                         {savingMap[q._id] ? "Saving..." : "Mark This Question"}
                       </button>
+                      {!ans.requiresManualReview && (
+                        <div
+                          className={`auto-result ${(ans.marksObtained || 0) > 0 ? "correct" : "incorrect"}`}
+                        >
+                          {(ans.marksObtained || 0) > 0
+                            ? "Auto graded: Correct"
+                            : "Auto graded: Incorrect"}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div
-                      className={`auto-result ${ans.isCorrect ? "correct" : "incorrect"}`}
+                      className={`auto-result ${(ans.marksObtained || 0) > 0 ? "correct" : "incorrect"}`}
                     >
-                      {ans.isCorrect
-                        ? "Auto-graded correct"
-                        : "Auto-graded incorrect"}
+                      {(ans.marksObtained || 0) > 0
+                        ? "Auto graded: Correct"
+                        : "Auto graded: Incorrect"}
                     </div>
                   )}
                 </div>

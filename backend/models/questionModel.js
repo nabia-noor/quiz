@@ -4,7 +4,7 @@ const questionSchema = new mongoose.Schema(
   {
     questionType: {
       type: String,
-      enum: ["mcq", "text"],
+      enum: ["mcq", "truefalse", "typed"],
       default: "mcq",
     },
     quizId: {

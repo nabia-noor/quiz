@@ -11,7 +11,7 @@ const QuizAttempt = () => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [timeLeft, setTimeLeft] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -250,7 +250,8 @@ const QuizAttempt = () => {
                   <p>{currentQuestion.questionText}</p>
                 </div>
 
-                {currentQuestionType === "text" ? (
+                {currentQuestionType === "text" ||
+                currentQuestionType === "typed" ? (
                   <div className="typed-question">
                     <label className="typed-label">Type your answer</label>
                     <textarea

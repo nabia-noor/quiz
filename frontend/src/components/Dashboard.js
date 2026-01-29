@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { quizAPI, classAPI, resultAPI } from "../api";
+import { quizAPI, classAPI } from "../api";
 import "./Dashboard.css";
 
 function Dashboard() {
@@ -9,9 +9,8 @@ function Dashboard() {
     totalQuizzes: 0,
     activeQuizzes: 0,
     totalClasses: 0,
-    totalResults: 0,
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
@@ -38,15 +37,12 @@ function Dashboard() {
 
   const fetchAdminStats = async () => {
     try {
-      setLoading(true);
-      const [quizzesRes, classesRes, resultsRes] = await Promise.all([
+      const [quizzesRes, classesRes] = await Promise.all([
         quizAPI.getAll(),
         classAPI.getAll(),
-        resultAPI.getAll(),
       ]);
 
       let filteredQuizzes = quizzesRes.quizzes || [];
-      let resultsList = resultsRes.results || [];
 
       // Filter by selected class and year if available
       if (selectedClass && selectedYear) {
@@ -57,11 +53,6 @@ function Dashboard() {
           filteredQuizzes = filteredQuizzes.filter(
             (q) => q.classId._id === classData._id,
           );
-
-          const allowedQuizIds = new Set(filteredQuizzes.map((q) => q._id));
-          resultsList = resultsList.filter((r) =>
-            allowedQuizIds.has(r.quizId?._id || r.quizId),
-          );
         }
       }
 
@@ -69,7 +60,6 @@ function Dashboard() {
         totalQuizzes: filteredQuizzes.length,
         activeQuizzes: filteredQuizzes.filter((q) => q.isActive).length,
         totalClasses: classesRes.classes ? classesRes.classes.length : 0,
-        totalResults: resultsList.length,
       });
     } catch (error) {
       console.error("Error fetching admin stats:", error);
@@ -93,6 +83,7 @@ function Dashboard() {
         </div>
         <div className="nav-links">
           <Link to="/admin/dashboard">Dashboard</Link>
+          <Link to="/admin/teachers">Teachers</Link>
           <Link to="/admin/classes">Classes</Link>
           <Link to="/admin/quizzes">Quizzes</Link>
           <Link to="/admin/results">Results</Link>
@@ -103,8 +94,7 @@ function Dashboard() {
       </nav>
 
       <div className="dashboard-content">
-        <div className="dashboard-header">
-          <div className="header-top">
+        <div className="header-top">
             <div>
               <h2>Welcome Back, Admin! 👋</h2>
               <p>Manage your quiz system and track student performance</p>
@@ -113,7 +103,6 @@ function Dashboard() {
               <span>👤 {adminData.email || "Admin"}</span>
             </div>
           </div>
-        </div>
 
         <div className="filter-section">
           <h3>📊 Filter Statistics by Class</h3>
@@ -190,11 +179,12 @@ function Dashboard() {
 
               <div className="stat-card">
                 <div className="stat-icon">📊</div>
-                <div className="stat-number">{stats.totalResults}</div>
-                <p className="stat-label">Results</p>
-                <p className="stat-sub">Student Performance</p>
-                <Link to="/admin/results" className="stat-link">
-                  View →
+
+                <div className="stat-number">—</div>
+                <p className="stat-label">Teachers</p>
+                <p className="stat-sub">Manage Instructors</p>
+                <Link to="/admin/teachers" className="stat-link">
+                  Manage →
                 </Link>
               </div>
             </div>
@@ -218,10 +208,9 @@ function Dashboard() {
                   <p>Add, edit, and organize quiz questions</p>
                 </div>
                 <div className="feature-item">
-                  <h4>📊 Results Tracking</h4>
+                  <h4>👨‍🏫 Teacher Management</h4>
                   <p>
-                    View student performance, scores, and detailed result
-                    analytics
+                    Add and manage teachers. Teachers can create quizzes, mark submissions, and publish results.
                   </p>
                 </div>
               </div>

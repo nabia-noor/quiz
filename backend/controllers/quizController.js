@@ -8,11 +8,13 @@ export const createQuiz = async (req, res) => {
       title,
       description,
       classId,
+      subjectId,
       duration,
       totalMarks,
       passingMarks,
       startDate,
       expiryDate,
+      isActive,
     } = req.body;
 
     if (!title || !classId || !startDate || !expiryDate) {
@@ -22,16 +24,35 @@ export const createQuiz = async (req, res) => {
       });
     }
 
+    // Check if this is a teacher creating the quiz
+    const createdBy = req.adminId || req.teacherId;
+    const createdByRole = req.adminId ? "admin" : "teacher";
+
+    // If teacher, validate that the course (classId) is assigned to them
+    if (createdByRole === "teacher") {
+      const { default: CourseAssignment } = await import("../models/courseAssignmentModel.js");
+      const assigned = await CourseAssignment.findOne({ teacherId: req.teacherId, classId });
+      if (!assigned) {
+        return res.status(403).json({ success: false, message: "This course is not assigned to you" });
+      }
+    }
+
+    // Draft by default for teachers; admins can choose to publish immediately
+    const publishFlag = createdByRole === "admin" ? (isActive ?? true) : (isActive ?? false);
+
     const newQuiz = new Quiz({
       title,
       description,
       classId,
+      subjectId: subjectId || null,
       duration,
       totalMarks,
       passingMarks,
       startDate,
       expiryDate,
-      createdBy: req.adminId,
+      createdBy: createdByRole === "admin" ? req.adminId : null,
+      teacherId: createdByRole === "teacher" ? req.teacherId : null,
+      isActive: publishFlag,
     });
 
     await newQuiz.save();
@@ -53,7 +74,20 @@ export const createQuiz = async (req, res) => {
 // Get All Quizzes
 export const getAllQuizzes = async (req, res) => {
   try {
-    const quizzes = await Quiz.find()
+    const { classId } = req.query;
+    const now = new Date();
+
+    const filter = {
+      isActive: true, // only published quizzes for students
+      startDate: { $lte: now },
+      expiryDate: { $gte: now },
+    };
+
+    if (classId) {
+      filter.classId = classId;
+    }
+
+    const quizzes = await Quiz.find(filter)
       .populate("classId", "name semester")
       .populate("createdBy", "name email")
       .sort({ createdAt: -1 });
@@ -75,6 +109,7 @@ export const getAllQuizzes = async (req, res) => {
 export const getQuizById = async (req, res) => {
   try {
     const { id } = req.params;
+    const now = new Date();
 
     const quiz = await Quiz.findById(id)
       .populate("classId", "name semester")
@@ -87,6 +122,16 @@ export const getQuizById = async (req, res) => {
       });
     }
 
+    // If this is a student request (no teacher/admin), ensure the quiz is active and within date range
+    if (!req.teacherId && !req.adminId) {
+      if (!quiz.isActive || quiz.startDate > now || quiz.expiryDate < now) {
+        return res.status(403).json({
+          success: false,
+          message: "This quiz is not available",
+        });
+      }
+    }
+
     return res.status(200).json({
       success: true,
       quiz,
@@ -97,6 +142,30 @@ export const getQuizById = async (req, res) => {
       message: "Server error",
       error: error.message,
     });
+  }
+};
+
+// Teacher: Get quiz by id (allows drafts) only if owned
+export const getQuizByIdForTeacher = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const teacherId = req.teacherId;
+
+    const quiz = await Quiz.findById(id)
+      .populate("classId", "name semester")
+      .populate("createdBy", "name email");
+
+    if (!quiz) {
+      return res.status(404).json({ success: false, message: "Quiz not found" });
+    }
+
+    if (!quiz.teacherId || quiz.teacherId.toString() !== teacherId) {
+      return res.status(403).json({ success: false, message: "You do not have access to this quiz" });
+    }
+
+    return res.status(200).json({ success: true, quiz });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
 
@@ -138,6 +207,22 @@ export const updateQuiz = async (req, res) => {
       isActive,
     } = req.body;
 
+    const quiz = await Quiz.findById(id);
+    if (!quiz) {
+      return res.status(404).json({
+        success: false,
+        message: "Quiz not found",
+      });
+    }
+
+    // Check authorization: Only admin or the teacher who created it can update
+    if (req.teacherId && quiz.teacherId?.toString() !== req.teacherId) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to update this quiz",
+      });
+    }
+
     const updatedQuiz = await Quiz.findByIdAndUpdate(
       id,
       {
@@ -153,13 +238,6 @@ export const updateQuiz = async (req, res) => {
       },
       { new: true, runValidators: true }
     ).populate("classId", "name semester");
-
-    if (!updatedQuiz) {
-      return res.status(404).json({
-        success: false,
-        message: "Quiz not found",
-      });
-    }
 
     return res.status(200).json({
       success: true,
@@ -180,21 +258,77 @@ export const deleteQuiz = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Delete all questions associated with this quiz
-    await Question.deleteMany({ quizId: id });
-
-    const deletedQuiz = await Quiz.findByIdAndDelete(id);
-
-    if (!deletedQuiz) {
+    const quiz = await Quiz.findById(id);
+    if (!quiz) {
       return res.status(404).json({
         success: false,
         message: "Quiz not found",
       });
     }
 
+    // Check authorization: Only admin or the teacher who created it can delete
+    if (req.teacherId && quiz.teacherId?.toString() !== req.teacherId) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to delete this quiz",
+      });
+    }
+
+    // Delete all questions associated with this quiz
+    await Question.deleteMany({ quizId: id });
+
+    const deletedQuiz = await Quiz.findByIdAndDelete(id);
+
     return res.status(200).json({
       success: true,
       message: "Quiz and associated questions deleted successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// Get Teacher's Quizzes
+export const getTeacherQuizzes = async (req, res) => {
+  try {
+    const teacherId = req.teacherId;
+
+    const quizzes = await Quiz.find({ teacherId })
+      .populate("classId", "name semester")
+      .populate("subjectId", "name code")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      quizzes,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// Get Teacher's Quizzes for Specific Class
+export const getTeacherQuizzesByClass = async (req, res) => {
+  try {
+    const { classId } = req.params;
+    const teacherId = req.teacherId;
+
+    const quizzes = await Quiz.find({ teacherId, classId })
+      .populate("classId", "name semester")
+      .populate("subjectId", "name code")
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      quizzes,
     });
   } catch (error) {
     return res.status(500).json({
