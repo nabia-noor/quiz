@@ -1,11 +1,13 @@
 # Quiz Marking & Results Management System
 
 ## Overview
+
 This document describes the complete implementation of quiz marking and results management system that enables teachers to review, mark, and publish student quiz attempts, with results becoming visible to students in their dashboard.
 
 ## Complete Workflow
 
 ### 1. Student Attempts Quiz
+
 - Student navigates to available quizzes and attempts a quiz
 - Upon submission, answers are sent to `/api/result/submit` endpoint
 - Result is created with:
@@ -14,6 +16,7 @@ This document describes the complete implementation of quiz marking and results 
   - Initial `reviewStatus = "pending"`
 
 ### 2. Attempt Appears on Teacher Dashboard
+
 - Teacher views dashboard at `/teacher/dashboard`
 - Dashboard shows "⏳ Quizzes Awaiting Review" section
 - Each quiz card displays:
@@ -23,6 +26,7 @@ This document describes the complete implementation of quiz marking and results 
   - "Review Now" button linking to attempts list
 
 ### 3. Teacher Reviews Student Answers
+
 - Teacher clicks "Review Now" or navigates to `/teacher/quiz/:quizId/attempts`
 - **TeacherQuizAttempts** component displays:
   - Stats grid: Total attempts, submitted, pending, marked
@@ -36,6 +40,7 @@ This document describes the complete implementation of quiz marking and results 
 - Status badges show: Pending, In Progress, Marked, Published
 
 ### 4. Teacher Marks Individual Quiz
+
 - Teacher clicks "Review & Mark" on a student attempt
 - Navigates to `/teacher/result/:resultId/mark`
 - **TeacherMarkQuiz** component shows:
@@ -50,6 +55,7 @@ This document describes the complete implementation of quiz marking and results 
   - Save & Mark button
 
 ### 5. Results Become Visible to Student
+
 - Once teacher marks quiz and publishes result:
   - Result's `reviewStatus` changes to "published"
   - Student can see result in their dashboard under "My Results"
@@ -66,7 +72,9 @@ This document describes the complete implementation of quiz marking and results 
 ### Database Schema Updates
 
 #### Result Model (resultModel.js)
+
 Added fields:
+
 ```javascript
 {
   markedBy: ObjectId (reference to Teacher),
@@ -80,6 +88,7 @@ Added fields:
 ### API Endpoints (resultRoutes.js)
 
 #### Teacher Routes
+
 1. **GET /result/teacher/quiz/:quizId**
    - Get all student attempts for a specific quiz
    - Requires: `teacherAuthMiddleware`
@@ -132,9 +141,11 @@ Added fields:
 ### Components
 
 #### 1. TeacherQuizAttempts.js (NEW)
+
 **Purpose**: Display list of student attempts for a quiz
 
 **Features**:
+
 - Shows quiz title and total marks
 - Stats grid: total attempts, submitted, pending, marked
 - Sortable table of attempts with:
@@ -147,15 +158,18 @@ Added fields:
   - View/Review button
 
 **Styling**: `TeacherQuizAttempts.css`
+
 - Modern gradient background
 - Responsive table design
 - Color-coded status badges
 - Smooth hover effects
 
 #### 2. TeacherMarkQuiz.js (NEW)
+
 **Purpose**: Allow teacher to review and mark individual student attempt
 
 **Features**:
+
 - Student info header with submission details
 - Marks summary showing original vs. current scores
 - Question-by-question display:
@@ -168,14 +182,17 @@ Added fields:
 - Save & Mark button
 
 **Styling**: `TeacherMarkQuiz.css`
+
 - Clean card-based design
 - Distinct styling for different question types
 - Visual hierarchy with color-coded sections
 
 #### 3. TeacherResults.js (UPDATED)
+
 **Purpose**: Batch quiz review and marking interface
 
 **Changes**:
+
 - Removed old table view
 - Now shows grid of quiz cards
 - Each card displays:
@@ -184,9 +201,11 @@ Added fields:
   - "Review & Mark" button linking to attempts
 
 #### 4. TeacherDashboard.js (UPDATED)
+
 **Purpose**: Show overview with pending reviews
 
 **New Section**: "Quizzes Awaiting Review"
+
 - Shows only quizzes with pending attempts
 - Each quiz card displays:
   - Title
@@ -195,9 +214,11 @@ Added fields:
   - "Review Now" link
 
 #### 5. UserResults.js (UPDATED)
+
 **Purpose**: Show student their results
 
 **Updates**:
+
 - Only shows published results
 - Filter updated to check `reviewStatus === "published"`
 - Status badges updated to show:
@@ -208,18 +229,20 @@ Added fields:
 ### API Helpers (api.js)
 
 Added `teacherResultAPI`:
+
 ```javascript
 {
-  getQuizAttempts(quizId),      // GET /result/teacher/quiz/:quizId
-  getAttemptDetails(resultId),  // GET /result/teacher/attempt/:resultId
-  markQuiz(resultId, data),     // PUT /result/teacher/:resultId/mark
-  publishResult(resultId)       // PUT /result/teacher/:resultId/publish
+  (getQuizAttempts(quizId), // GET /result/teacher/quiz/:quizId
+    getAttemptDetails(resultId), // GET /result/teacher/attempt/:resultId
+    markQuiz(resultId, data), // PUT /result/teacher/:resultId/mark
+    publishResult(resultId)); // PUT /result/teacher/:resultId/publish
 }
 ```
 
 ### Routes (App.js)
 
 Added routes:
+
 ```javascript
 /teacher/quiz/:quizId/attempts → TeacherQuizAttempts
 /teacher/result/:resultId/mark → TeacherMarkQuiz
@@ -230,6 +253,7 @@ Added routes:
 ## User Flows
 
 ### Teacher Workflow
+
 1. **Dashboard**: See quizzes with pending reviews
 2. **Results Page**: Select batch → view quiz cards with stats
 3. **Attempts List**: Click "Review Now" → see all student attempts
@@ -237,6 +261,7 @@ Added routes:
 5. **Publish**: Automatically published if checkbox selected, or publish after review
 
 ### Student Workflow
+
 1. **Dashboard**: See stats including published results
 2. **Available Quizzes**: Attempt a quiz
 3. **Results Page**: See submitted attempts
@@ -298,11 +323,13 @@ Result Visible to Student
 ## Security & Authorization
 
 **teacherAuthMiddleware Checks**:
+
 1. Valid JWT token exists
 2. Token has "teacher" role
 3. Request parameters validated
 
 **Course Access Verification**:
+
 1. Teacher must be creator of the quiz
 2. Quiz.createdBy === req.teacherId
 3. Returns 403 Forbidden if unauthorized

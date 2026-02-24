@@ -187,9 +187,7 @@ function QuestionManagement() {
 
     // Check if marks are already completed (only for new questions, not editing)
     if (!editingId && isMarksCompleted()) {
-      alert(
-        "Cannot add more questions. Total marks have been completed.",
-      );
+      alert("Cannot add more questions. Total marks have been completed.");
       return;
     }
 
@@ -340,8 +338,8 @@ function QuestionManagement() {
               <div className="marks-allocation" style={{ marginTop: "10px" }}>
                 <div className="marks-info">
                   <span>
-                    <strong>Allocated Marks:</strong> {getTotalAllocatedMarks()}/
-                    {quiz.totalMarks}
+                    <strong>Allocated Marks:</strong> {getTotalAllocatedMarks()}
+                    /{quiz.totalMarks}
                   </span>
                   <span style={{ marginLeft: "20px" }}>
                     <strong>Available Marks:</strong> {getAvailableMarks()}
@@ -410,7 +408,7 @@ function QuestionManagement() {
                   required
                 >
                   <option value="mcq">Multiple Choice (auto-graded)</option>
-                  <option value="text">Typed (manual marking)</option>
+                  <option value="typed">Typed (manual marking)</option>
                 </select>
               </div>
 
@@ -454,11 +452,14 @@ function QuestionManagement() {
                     max={editingId ? undefined : getAvailableMarks()}
                     required
                   />
-                  {!editingId && quiz && getAvailableMarks() < quiz.totalMarks && (
-                    <p className="helper-text">
-                      Available marks: {getAvailableMarks()} / {quiz.totalMarks}
-                    </p>
-                  )}
+                  {!editingId &&
+                    quiz &&
+                    getAvailableMarks() < quiz.totalMarks && (
+                      <p className="helper-text">
+                        Available marks: {getAvailableMarks()} /{" "}
+                        {quiz.totalMarks}
+                      </p>
+                    )}
                 </div>
               </div>
 

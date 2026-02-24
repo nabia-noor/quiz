@@ -4,7 +4,7 @@ import Class from "./models/classModel.js";
 // Connect to MongoDB
 const connectDB = async () => {
   await mongoose.connect(
-    "mongodb+srv://quiz:helloworld123@cluster0.gnw23kh.mongodb.net/Quiz"
+    "mongodb+srv://quiz:helloworld123@cluster0.gnw23kh.mongodb.net/Quiz",
   );
   console.log("DB CONNECTED");
 };
@@ -18,14 +18,16 @@ const checkClasses = async () => {
     console.log("\n📋 All Classes in Database:");
     console.log("================================");
     allClasses.forEach((cls) => {
-      console.log(`Name: ${cls.name}, Semester: ${cls.semester}, Active: ${cls.isActive}`);
+      console.log(
+        `Name: ${cls.name}, Semester: ${cls.semester}, Active: ${cls.isActive}`,
+      );
     });
 
-    const batchClasses = await Class.find({ 
+    const batchClasses = await Class.find({
       name: { $in: ["BS", "MS", "PhD"] },
-      isActive: true 
+      isActive: true,
     });
-    
+
     console.log("\n✅ Available Batches (BS, MS, PhD):");
     console.log("================================");
     if (batchClasses.length === 0) {

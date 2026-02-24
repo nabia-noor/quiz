@@ -28,10 +28,26 @@ resultRouter.get("/user-stats/:userId", authMiddleware, getUserStats);
 resultRouter.get("/:id", authMiddleware, getResultById);
 
 // Teacher routes
-resultRouter.get("/teacher/quiz/:quizId", teacherAuthMiddleware, getQuizAttemptsForTeacher);
-resultRouter.get("/teacher/attempt/:resultId", teacherAuthMiddleware, getStudentAnswerDetails);
-resultRouter.put("/teacher/:resultId/mark", teacherAuthMiddleware, markQuizForTeacher);
-resultRouter.put("/teacher/:resultId/publish", teacherAuthMiddleware, publishResultForTeacher);
+
+// Allow both teacher and admin to access these endpoints
+import { combineAuth } from "../utils/combineAuth.js";
+
+resultRouter.get(
+  "/teacher/quiz/:quizId",
+  combineAuth,
+  getQuizAttemptsForTeacher,
+);
+resultRouter.get(
+  "/teacher/attempt/:resultId",
+  combineAuth,
+  getStudentAnswerDetails,
+);
+resultRouter.put("/teacher/:resultId/mark", combineAuth, markQuizForTeacher);
+resultRouter.put(
+  "/teacher/:resultId/publish",
+  combineAuth,
+  publishResultForTeacher,
+);
 
 // Admin routes - REMOVED: Admins should not have access to student quiz submissions
 // Quiz submissions are only visible to the teacher who created the quiz

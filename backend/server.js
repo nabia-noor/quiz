@@ -10,6 +10,7 @@ import questionRouter from "./routes/questionRoutes.js";
 import resultRouter from "./routes/resultRoutes.js";
 import teacherRouter from "./routes/teacherRoutes.js";
 import subjectRouter from "./routes/subjectRoutes.js";
+import courseRouter from "./routes/courseRoutes.js";
 
 const app = express();
 const port = 4000;
@@ -34,6 +35,8 @@ app.use("/api/quiz", quizRouter);
 app.use("/api/question", questionRouter);
 app.use("/api/result", resultRouter);
 app.use("/api/teacher", teacherRouter);
+
+app.use("/api/course", courseRouter);
 app.use("/api/subject", subjectRouter);
 
 app.listen(port, () => {

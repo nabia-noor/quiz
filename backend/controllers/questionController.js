@@ -74,7 +74,8 @@ export const createQuestion = async (req, res) => {
       });
     }
 
-    const sanitizedOptions = (normalizedType === "mcq" || normalizedType === "truefalse") ? options : [];
+    const sanitizedOptions =
+      normalizedType === "mcq" || normalizedType === "truefalse" ? options : [];
 
     const newQuestion = new Question({
       questionType: normalizedType,
@@ -176,7 +177,8 @@ export const updateQuestion = async (req, res) => {
       });
     }
 
-    const normalizedType = questionType || existingQuestion.questionType || "mcq";
+    const normalizedType =
+      questionType || existingQuestion.questionType || "mcq";
 
     if (startDate && isNaN(new Date(startDate))) {
       return res.status(400).json({
@@ -200,7 +202,10 @@ export const updateQuestion = async (req, res) => {
     }
 
     const optionsToUseRaw = options.length ? options : existingQuestion.options;
-    const optionsToUse = (normalizedType === "mcq" || normalizedType === "truefalse") ? optionsToUseRaw : [];
+    const optionsToUse =
+      normalizedType === "mcq" || normalizedType === "truefalse"
+        ? optionsToUseRaw
+        : [];
 
     if (normalizedType === "mcq" || normalizedType === "truefalse") {
       if (!optionsToUse || optionsToUse.length < 2) {

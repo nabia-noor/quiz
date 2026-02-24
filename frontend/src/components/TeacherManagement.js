@@ -50,7 +50,12 @@ function TeacherManagement() {
     setError("");
     setSuccess("");
 
-    if (!formData.name || !formData.email || !formData.contactNumber || !formData.password) {
+    if (
+      !formData.name ||
+      !formData.email ||
+      !formData.contactNumber ||
+      !formData.password
+    ) {
       setError("All fields are required");
       return;
     }
@@ -197,7 +202,9 @@ function TeacherManagement() {
 
         <div className="teachers-table">
           {teachers.length === 0 ? (
-            <p className="no-data">No teachers found. Click "Add New Teacher" to create one.</p>
+            <p className="no-data">
+              No teachers found. Click "Add New Teacher" to create one.
+            </p>
           ) : (
             <table>
               <thead>
@@ -217,7 +224,9 @@ function TeacherManagement() {
                     <td>{teacher.email}</td>
                     <td>{teacher.contactNumber}</td>
                     <td>
-                      <span className={`status ${teacher.isActive ? "active" : "inactive"}`}>
+                      <span
+                        className={`status ${teacher.isActive ? "active" : "inactive"}`}
+                      >
                         {teacher.isActive ? "Active" : "Inactive"}
                       </span>
                     </td>

@@ -7,6 +7,7 @@ A complete end-to-end quiz marking and results management system for educational
 ## ✨ Key Features
 
 ### For Teachers
+
 - 📊 **Dashboard Overview** - See pending reviews at a glance
 - 👥 **Attempt List** - View all students who attempted a quiz
 - 📋 **Detailed Marking** - Review each student's answers with context
@@ -16,6 +17,7 @@ A complete end-to-end quiz marking and results management system for educational
 - 🔐 **Access Control** - Only access own quizzes
 
 ### For Students
+
 - 📝 **Submission** - Attempt available quizzes
 - 📊 **Status Tracking** - See exact status of submissions (Under Review, Being Evaluated, etc.)
 - ✅ **Result Viewing** - See published results with marks and feedback
@@ -117,6 +119,7 @@ Quiz/
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js v14+
 - MongoDB connection
 - Admin and Teacher users created
@@ -125,6 +128,7 @@ Quiz/
 ### Installation
 
 1. **Backend Setup**
+
    ```bash
    cd backend
    npm install
@@ -132,6 +136,7 @@ Quiz/
    ```
 
 2. **Frontend Setup**
+
    ```bash
    cd frontend
    npm install
@@ -153,6 +158,7 @@ Quiz/
 ## 📚 Documentation
 
 ### For Understanding the System
+
 - **[QUIZ_MARKING_SYSTEM.md](./QUIZ_MARKING_SYSTEM.md)** - Complete technical documentation
   - Backend implementation
   - API endpoints
@@ -160,6 +166,7 @@ Quiz/
   - Authorization & security
 
 ### For Using the System
+
 - **[MARKING_QUICK_START.md](./MARKING_QUICK_START.md)** - Quick start guide
   - For teachers: How to mark quizzes
   - For students: How to view results
@@ -167,6 +174,7 @@ Quiz/
   - Troubleshooting
 
 ### For Implementation Details
+
 - **[IMPLEMENTATION_COMPLETE.md](./IMPLEMENTATION_COMPLETE.md)** - What was built
   - Files created/modified
   - Features implemented
@@ -174,6 +182,7 @@ Quiz/
   - Testing scenarios
 
 ### For Testing
+
 - **[INTEGRATION_TEST_CHECKLIST.md](./INTEGRATION_TEST_CHECKLIST.md)** - 18 comprehensive tests
   - Step-by-step procedures
   - Expected results
@@ -185,49 +194,61 @@ Quiz/
 ### Teacher Endpoints (Protected with `teacherAuthMiddleware`)
 
 #### Get Quiz Attempts
+
 ```
 GET /api/result/teacher/quiz/:quizId
 ```
+
 **Purpose**: Fetch all student attempts for a quiz
 **Returns**: Array of attempts with student info and status
 
 #### Get Attempt Details
+
 ```
 GET /api/result/teacher/attempt/:resultId
 ```
+
 **Purpose**: Fetch complete answer details for marking
 **Returns**: Full result with populated questions
 
 #### Mark Quiz
+
 ```
 PUT /api/result/teacher/:resultId/mark
 Body: { answers: [...], reviewComments: "..." }
 ```
+
 **Purpose**: Save marks and update result status
 **Returns**: Updated result with new marks
 
 #### Publish Result
+
 ```
 PUT /api/result/teacher/:resultId/publish
 ```
+
 **Purpose**: Make result visible to student
 **Returns**: Updated result status
 
 ## 🛡️ Security Features
 
 ✅ **Role-Based Access Control**
+
 - Only teachers can access marking endpoints
 - Students can only see published results
 
 ✅ **Course Ownership Verification**
+
 - Teachers can only mark quizzes they created
 - Check: `quiz.createdBy === teacher._id`
 
 ✅ **Authorization Headers**
+
 - All requests require valid JWT token
 - Token includes teacher/student role
 
 ✅ **Data Privacy**
+
 - Students cannot see unpublished results
 - Students cannot see other students' results
 - Teachers cannot access other teachers' quizzes
@@ -235,6 +256,7 @@ PUT /api/result/teacher/:resultId/publish
 ## 📊 Database Schema
 
 ### Result Model Updates
+
 ```javascript
 {
   // Existing fields
@@ -246,7 +268,7 @@ PUT /api/result/teacher/:resultId/publish
   isPassed: Boolean,
   submittedAt: Date,
   answers: Array,
-  
+
   // NEW FIELDS
   markedBy: ObjectId,              // Teacher who marked
   markedAt: Date,                  // When marked
@@ -280,6 +302,7 @@ PUT /api/result/teacher/:resultId/publish
 ## ✅ Quality Assurance
 
 ### Code Quality
+
 - ✅ Consistent naming conventions
 - ✅ Clear component structure
 - ✅ Error handling throughout
@@ -287,6 +310,7 @@ PUT /api/result/teacher/:resultId/publish
 - ✅ Performance optimizations
 
 ### Testing
+
 - ✅ 18 comprehensive test cases
 - ✅ Authorization testing
 - ✅ Error handling verification
@@ -294,6 +318,7 @@ PUT /api/result/teacher/:resultId/publish
 - ✅ Data persistence validation
 
 ### Documentation
+
 - ✅ Technical documentation
 - ✅ User guides
 - ✅ Code comments
@@ -303,12 +328,14 @@ PUT /api/result/teacher/:resultId/publish
 ## 🐛 Known Limitations & Future Work
 
 ### Current Limitations
+
 - Bulk marking not yet implemented
 - No email notifications
 - Basic mark templates only
 - No grade statistics/analytics
 
 ### Potential Enhancements
+
 - [ ] Rubric-based marking
 - [ ] Bulk operations
 - [ ] Email notifications
@@ -321,12 +348,14 @@ PUT /api/result/teacher/:resultId/publish
 ## 📞 Support
 
 ### For Technical Issues
+
 1. Check `INTEGRATION_TEST_CHECKLIST.md` for common scenarios
 2. Review error messages in browser console
 3. Check API responses in network tab
 4. Verify database connection
 
 ### For Feature Questions
+
 1. See `MARKING_QUICK_START.md` for usage
 2. Check `QUIZ_MARKING_SYSTEM.md` for technical details
 3. Review component code with inline comments
@@ -340,12 +369,14 @@ This implementation is part of the Quiz Management System.
 ## 🎓 Learning Resources
 
 ### Understanding the Code
+
 - Backend MVC pattern in `controllers/` and `models/`
 - Frontend React hooks in components
 - RESTful API design in routes
 - Authorization patterns in middleware
 
 ### For Contributors
+
 1. Follow existing code style
 2. Add comments for complex logic
 3. Update documentation when changing features

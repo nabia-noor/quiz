@@ -278,7 +278,8 @@ export const getAllResults = async (req, res) => {
     // Only aggregate statistics are allowed, not individual attempts
     return res.status(403).json({
       success: false,
-      message: "Access denied. Quiz submissions are only accessible to the quiz creator (teacher).",
+      message:
+        "Access denied. Quiz submissions are only accessible to the quiz creator (teacher).",
     });
   } catch (error) {
     return res.status(500).json({
@@ -296,7 +297,8 @@ export const getResultsByQuiz = async (req, res) => {
     // Only the quiz creator (teacher) can view submissions
     return res.status(403).json({
       success: false,
-      message: "Access denied. Quiz submissions are only accessible to the quiz creator (teacher).",
+      message:
+        "Access denied. Quiz submissions are only accessible to the quiz creator (teacher).",
     });
   } catch (error) {
     return res.status(500).json({
@@ -469,9 +471,10 @@ export const deleteResult = async (req, res) => {
 export const getQuizAttemptsForTeacher = async (req, res) => {
   try {
     const { quizId } = req.params;
-    const teacherId = req.teacherId;
 
-    // Verify the quiz belongs to this teacher
+    // Determine user type
+    const teacherId = req.teacherId;
+    const adminId = req.adminId;
     const quiz = await Quiz.findById(quizId);
     if (!quiz) {
       return res.status(404).json({
@@ -479,12 +482,22 @@ export const getQuizAttemptsForTeacher = async (req, res) => {
         message: "Quiz not found",
       });
     }
-
-    // Check if quiz is created by this teacher or if it's an admin quiz
-    const isTeacherQuiz = quiz.teacherId && quiz.teacherId.toString() === teacherId.toString();
-    const isAdminQuiz = quiz.createdBy && quiz.createdBy.toString() === teacherId.toString();
-
-    if (!isTeacherQuiz && !isAdminQuiz) {
+    let authorized = false;
+    if (
+      quiz.teacherId &&
+      teacherId &&
+      quiz.teacherId.toString() === teacherId.toString()
+    ) {
+      authorized = true;
+    }
+    if (
+      quiz.createdBy &&
+      adminId &&
+      quiz.createdBy.toString() === adminId.toString()
+    ) {
+      authorized = true;
+    }
+    if (!authorized) {
       return res.status(403).json({
         success: false,
         message: "You are not authorized to view attempts for this quiz",
@@ -527,13 +540,20 @@ export const getQuizAttemptsForTeacher = async (req, res) => {
 export const getStudentAnswerDetails = async (req, res) => {
   try {
     const { resultId } = req.params;
-    const teacherId = req.teacherId;
 
+    const teacherId = req.teacherId;
+    const adminId = req.adminId;
     // Get the result with all details
     const result = await Result.findById(resultId)
       .populate("userId", "name email")
-      .populate("quizId", "title totalMarks passingMarks description createdBy teacherId")
-      .populate("answers.questionId", "questionText options questionType marks");
+      .populate(
+        "quizId",
+        "title totalMarks passingMarks description createdBy teacherId",
+      )
+      .populate(
+        "answers.questionId",
+        "questionText options questionType marks",
+      );
 
     if (!result) {
       return res.status(404).json({
@@ -541,20 +561,29 @@ export const getStudentAnswerDetails = async (req, res) => {
         message: "Result not found",
       });
     }
-
-    // Verify the quiz belongs to this teacher
     if (!result.quizId) {
       return res.status(404).json({
         success: false,
         message: "Quiz not found",
       });
     }
-
     const quiz = result.quizId;
-    const isTeacherQuiz = quiz.teacherId && quiz.teacherId.toString() === teacherId.toString();
-    const isAdminQuiz = quiz.createdBy && quiz.createdBy.toString() === teacherId.toString();
-
-    if (!isTeacherQuiz && !isAdminQuiz) {
+    let authorized = false;
+    if (
+      quiz.teacherId &&
+      teacherId &&
+      quiz.teacherId.toString() === teacherId.toString()
+    ) {
+      authorized = true;
+    }
+    if (
+      quiz.createdBy &&
+      adminId &&
+      quiz.createdBy.toString() === adminId.toString()
+    ) {
+      authorized = true;
+    }
+    if (!authorized) {
       return res.status(403).json({
         success: false,
         message: "You are not authorized to view this result",
@@ -613,6 +642,7 @@ export const markQuizForTeacher = async (req, res) => {
     const { resultId } = req.params;
     const { answers, reviewComments } = req.body;
     const teacherId = req.teacherId;
+    const adminId = req.adminId;
 
     if (!answers || !Array.isArray(answers)) {
       return res.status(400).json({
@@ -630,12 +660,24 @@ export const markQuizForTeacher = async (req, res) => {
       });
     }
 
-    // Verify teacher owns this quiz
+    // Verify teacher or admin owns this quiz
     const quiz = result.quizId;
-    const isTeacherQuiz = quiz.teacherId && quiz.teacherId.toString() === teacherId.toString();
-    const isAdminQuiz = quiz.createdBy && quiz.createdBy.toString() === teacherId.toString();
-
-    if (!quiz || (!isTeacherQuiz && !isAdminQuiz)) {
+    let authorized = false;
+    if (
+      quiz.teacherId &&
+      teacherId &&
+      quiz.teacherId.toString() === teacherId.toString()
+    ) {
+      authorized = true;
+    }
+    if (
+      quiz.createdBy &&
+      adminId &&
+      quiz.createdBy.toString() === adminId.toString()
+    ) {
+      authorized = true;
+    }
+    if (!quiz || !authorized) {
       return res.status(403).json({
         success: false,
         message: "You are not authorized to mark this quiz",
@@ -674,7 +716,7 @@ export const markQuizForTeacher = async (req, res) => {
     result.obtainedMarks = totalObtainedMarks;
     result.percentage = percentage;
     result.isPassed = isPassed;
-    result.markedBy = teacherId;
+    result.markedBy = teacherId || adminId;
     result.markedAt = new Date();
     result.reviewStatus = "marked";
     result.reviewComments = reviewComments || "";
@@ -707,6 +749,7 @@ export const publishResultForTeacher = async (req, res) => {
   try {
     const { resultId } = req.params;
     const teacherId = req.teacherId;
+    const adminId = req.adminId;
 
     const result = await Result.findById(resultId).populate("quizId");
     if (!result) {
@@ -716,12 +759,24 @@ export const publishResultForTeacher = async (req, res) => {
       });
     }
 
-    // Verify teacher owns this quiz
+    // Verify teacher or admin owns this quiz
     const quiz = result.quizId;
-    const isTeacherQuiz = quiz.teacherId && quiz.teacherId.toString() === teacherId.toString();
-    const isAdminQuiz = quiz.createdBy && quiz.createdBy.toString() === teacherId.toString();
-
-    if (!quiz || (!isTeacherQuiz && !isAdminQuiz)) {
+    let authorized = false;
+    if (
+      quiz.teacherId &&
+      teacherId &&
+      quiz.teacherId.toString() === teacherId.toString()
+    ) {
+      authorized = true;
+    }
+    if (
+      quiz.createdBy &&
+      adminId &&
+      quiz.createdBy.toString() === adminId.toString()
+    ) {
+      authorized = true;
+    }
+    if (!quiz || !authorized) {
       return res.status(403).json({
         success: false,
         message: "You are not authorized to publish this result",

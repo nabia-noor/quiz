@@ -550,7 +550,9 @@
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 0.95rem;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .edit-quiz-form .form-group input:focus,
@@ -580,7 +582,9 @@
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.1s ease;
+  transition:
+    background-color 0.3s ease,
+    transform 0.1s ease;
 }
 
 .edit-quiz-form .btn-submit {

@@ -16,6 +16,12 @@ const quizSchema = new mongoose.Schema(
       ref: "Class",
       required: true,
     },
+    courseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
+      required: false,
+      default: null,
+    },
     subjectId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Subject",
@@ -56,6 +62,16 @@ const quizSchema = new mongoose.Schema(
     teacherId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Teacher",
+      default: null,
+    },
+    assignedStudentIds: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: undefined,
+    }],
+    assignedGroupId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Class",
       default: null,
     },
   },

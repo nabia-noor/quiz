@@ -21,7 +21,11 @@ const quizRouter = express.Router();
 // Teacher routes (require teacher authentication) - MUST be before /:id routes
 quizRouter.post("/teacher/create", teacherAuthMiddleware, createQuiz);
 quizRouter.get("/teacher/my-quizzes", teacherAuthMiddleware, getTeacherQuizzes);
-quizRouter.get("/teacher/class/:classId", teacherAuthMiddleware, getTeacherQuizzesByClass);
+quizRouter.get(
+  "/teacher/class/:classId",
+  teacherAuthMiddleware,
+  getTeacherQuizzesByClass,
+);
 quizRouter.get("/teacher/:id", teacherAuthMiddleware, getQuizByIdForTeacher);
 quizRouter.put("/teacher/:id", teacherAuthMiddleware, updateQuiz);
 quizRouter.delete("/teacher/:id", teacherAuthMiddleware, deleteQuiz);

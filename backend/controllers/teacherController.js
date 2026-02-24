@@ -53,7 +53,7 @@ export const teacherLogin = async (req, res) => {
     const token = jwt.sign(
       { Id: teacher._id.toString(), role: "teacher" },
       JWT_SECRET,
-      { expiresIn: TOKEN_EXPIRES_IN }
+      { expiresIn: TOKEN_EXPIRES_IN },
     );
 
     return res.status(200).json({
@@ -294,43 +294,69 @@ export const deleteTeacher = async (req, res) => {
 export const assignCourses = async (req, res) => {
   try {
     const { teacherId } = req.params;
-    const { assignments } = req.body; // Array of {classId, quizId, subjectId}
+    const { batchId, courseId } = req.body;
     const adminId = req.adminId;
+
+    // Validate teacherId
+    if (!teacherId || !teacherId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid teacherId" });
+    }
 
     // Verify teacher exists
     const teacher = await Teacher.findById(teacherId);
     if (!teacher) {
-      return res.status(404).json({
-        success: false,
-        message: "Teacher not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Teacher not found" });
     }
 
-    if (!assignments || !Array.isArray(assignments) || assignments.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Assignments array is required and must not be empty",
-      });
-    }
-
-    // Delete existing assignments for this teacher
-    await CourseAssignment.deleteMany({ teacherId });
-
-    // Create new assignments (teacher-course only, not tied to specific quiz)
-    const createdAssignments = await CourseAssignment.insertMany(
-      assignments.map((assignment) => ({
-        teacherId,
-        classId: assignment.classId,
-        quizId: null, // Teacher will create their own quizzes
-        subjectId: assignment.subjectId || null,
-        assignedBy: adminId,
-      }))
+    // Verify batch and course exist
+    const batchExists = await import("../models/classModel.js").then((m) =>
+      m.default.findById(batchId),
     );
+    if (!batchExists) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Batch not found" });
+    }
+    const courseExists = await import("../models/courseModel.js").then((m) =>
+      m.default.findById(courseId),
+    );
+    if (!courseExists) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Course not found" });
+    }
+
+    // Check for duplicate for this teacher, batch, course
+    const exists = await CourseAssignment.findOne({
+      teacher: teacherId,
+      batch: batchId,
+      course: courseId,
+    });
+    if (exists) {
+      // Already assigned, ignore and return success
+      return res.status(200).json({
+        success: true,
+        message: "This teacher already has this batch and course assigned",
+        assignment: exists,
+      });
+    }
+
+    // Create assignment
+    const assignment = await CourseAssignment.create({
+      teacher: teacherId,
+      batch: batchId,
+      course: courseId,
+      assignedBy: adminId,
+    });
 
     return res.status(201).json({
       success: true,
-      message: "Courses assigned successfully",
-      assignments: createdAssignments,
+      message: "Course assigned successfully",
+      assignment,
     });
   } catch (error) {
     return res.status(500).json({
@@ -346,10 +372,9 @@ export const getAssignedCourses = async (req, res) => {
   try {
     const teacherId = req.teacherId || req.params.teacherId;
 
-    const assignments = await CourseAssignment.find({ teacherId })
-      .populate("classId", "name semester")
-      .populate("quizId", "title description duration totalMarks passingMarks startDate expiryDate")
-      .populate("subjectId", "name code _id")
+    const assignments = await CourseAssignment.find({ teacher: teacherId })
+      .populate("batch", "name semester degree program session")
+      .populate("course", "code name creditHours")
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -370,15 +395,18 @@ export const getAssignedBatches = async (req, res) => {
   try {
     const teacherId = req.teacherId;
 
-    const assignments = await CourseAssignment.find({ teacherId })
-      .populate("classId", "name semester _id");
+    const assignments = await CourseAssignment.find({
+      teacher: teacherId,
+    }).populate("batch", "name semester _id degree program session");
 
     // Get unique batches
     const batches = {};
     assignments.forEach((assignment) => {
-      const classId = assignment.classId._id.toString();
-      if (!batches[classId]) {
-        batches[classId] = assignment.classId;
+      if (assignment.batch && assignment.batch._id) {
+        const batchId = assignment.batch._id.toString();
+        if (!batches[batchId]) {
+          batches[batchId] = assignment.batch;
+        }
       }
     });
 
@@ -401,21 +429,18 @@ export const getCoursesForBatch = async (req, res) => {
     const { classId } = req.params;
     const teacherId = req.teacherId;
 
-    // First, ensure teacher is assigned to this class
-    const assignment = await CourseAssignment.findOne({ teacherId, classId });
-    if (!assignment) {
-      return res.status(403).json({ success: false, message: "Not assigned to this batch" });
+    // Find all course assignments for this teacher and batch
+    const assignments = await CourseAssignment.find({
+      teacher: teacherId,
+      batch: classId,
+    }).populate("course", "_id code name creditHours");
+
+    if (!assignments || assignments.length === 0) {
+      return res.status(200).json({ success: true, courses: [] });
     }
 
-    // Return all quizzes the teacher has created for this class (their "courses")
-    const quizzes = await Quiz.find({ teacherId, classId })
-      .select("title description duration totalMarks passingMarks startDate expiryDate isActive")
-      .sort({ createdAt: -1 });
-
-    const courses = quizzes.map((q) => ({
-      ...q.toObject(),
-      subject: assignment.subjectId ? assignment.subjectId : null,
-    }));
+    // Return the assigned courses for this batch
+    const courses = assignments.map((a) => a.course).filter(Boolean);
 
     return res.status(200).json({
       success: true,

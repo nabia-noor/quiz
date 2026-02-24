@@ -2,9 +2,10 @@
 
 ## 📌 Project Overview
 
-A comprehensive user management, teacher management, and quiz attempt system has been successfully integrated into the Quiz Application. 
+A comprehensive user management, teacher management, and quiz attempt system has been successfully integrated into the Quiz Application.
 
 **Features Include:**
+
 - User authentication and student quizzes
 - Complete teacher management system
 - Teacher course assignment
@@ -509,7 +510,7 @@ const submitQuiz = async (quizId, answers) => {
   const response = await axios.post(
     "http://localhost:4000/api/result/submit",
     { quizId, answers },
-    { headers: { Authorization: `Bearer ${token}` } }
+    { headers: { Authorization: `Bearer ${token}` } },
   );
   return response.data.result;
 };

@@ -23,7 +23,7 @@ function TeacherMarkQuiz() {
       const response = await teacherResultAPI.getAttemptDetails(resultId);
       if (response.success) {
         setResult(response.result);
-        
+
         // Initialize marks state
         const initialMarks = {};
         response.result.answers.forEach((ans) => {
@@ -51,7 +51,7 @@ function TeacherMarkQuiz() {
   const handleSaveMarks = async () => {
     try {
       setSaving(true);
-      
+
       const answerUpdates = result.answers.map((ans) => ({
         questionId: ans.questionId,
         marksAwarded: marks[ans.questionId] || 0,
@@ -159,7 +159,8 @@ function TeacherMarkQuiz() {
             {totalMarksAwarded} / {totalMaxMarks}
             <small>
               {" "}
-              ({totalMaxMarks > 0
+              (
+              {totalMaxMarks > 0
                 ? ((totalMarksAwarded / totalMaxMarks) * 100).toFixed(2)
                 : 0}
               %)
@@ -205,9 +206,7 @@ function TeacherMarkQuiz() {
                               : ""
                           } ${opt.isCorrect ? "correct" : ""}`}
                         >
-                          <span className="option-text">
-                            {opt.optionText}
-                          </span>
+                          <span className="option-text">{opt.optionText}</span>
                           {opt.optionText === answer.selectedAnswer && (
                             <span className="selected-badge">✓ Answered</span>
                           )}
@@ -219,7 +218,9 @@ function TeacherMarkQuiz() {
                     </div>
                   </div>
                   <div className="automatic-marking">
-                    <span className={`correct-status ${answer.isCorrect ? "yes" : "no"}`}>
+                    <span
+                      className={`correct-status ${answer.isCorrect ? "yes" : "no"}`}
+                    >
                       {answer.isCorrect ? "✓ Correct" : "✗ Incorrect"}
                     </span>
                   </div>
@@ -228,7 +229,9 @@ function TeacherMarkQuiz() {
                 <div className="text-answer">
                   <div className="answer-group">
                     <label>Student Answer:</label>
-                    <div className="answer-text">{answer.typedAnswer || answer.selectedAnswer}</div>
+                    <div className="answer-text">
+                      {answer.typedAnswer || answer.selectedAnswer}
+                    </div>
                   </div>
                 </div>
               )}
@@ -248,7 +251,7 @@ function TeacherMarkQuiz() {
                       handleMarkChange(
                         answer.questionId,
                         parseFloat(e.target.value) || 0,
-                        answer.marks
+                        answer.marks,
                       )
                     }
                     className="marks-input"

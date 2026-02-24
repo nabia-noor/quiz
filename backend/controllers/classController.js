@@ -3,19 +3,21 @@ import Class from "../models/classModel.js";
 // Create Class
 export const createClass = async (req, res) => {
   try {
-    const { name, semester, description } = req.body;
+    const { degree, program, session, semester } = req.body;
 
-    if (!name || !semester) {
+    if (!degree || !program || !session || !semester) {
       return res.status(400).json({
         success: false,
-        message: "Class name and semester are required",
+        message:
+          "All fields (Degree, Program, Session, Semester) are required.",
       });
     }
 
     const newClass = new Class({
-      name,
+      degree,
+      program,
+      session,
       semester,
-      description,
     });
 
     await newClass.save();
@@ -88,7 +90,7 @@ export const updateClass = async (req, res) => {
     const updatedClass = await Class.findByIdAndUpdate(
       id,
       { name, semester, description, isActive },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     if (!updatedClass) {

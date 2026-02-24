@@ -56,11 +56,17 @@ const UserResults = () => {
       // Only show published results to students
       const isPublished = result.reviewStatus === "published";
       const pending = result.manualReviewPending;
-      
+
       // If result is not published and has no manual review pending, don't show it yet
       if (!isPublished && !pending) return false;
-      
-      if (filter === "pending") return pending || result.reviewStatus === "pending" || result.reviewStatus === "in-progress" || result.reviewStatus === "marked";
+
+      if (filter === "pending")
+        return (
+          pending ||
+          result.reviewStatus === "pending" ||
+          result.reviewStatus === "in-progress" ||
+          result.reviewStatus === "marked"
+        );
       if (filter === "passed") return isPublished && result.isPassed;
       if (filter === "failed") return isPublished && !result.isPassed;
       return true;
@@ -187,11 +193,12 @@ const UserResults = () => {
                         >
                           {result.reviewStatus === "pending"
                             ? "⏳ Under Review"
-                            : result.reviewStatus === "in-progress" || result.reviewStatus === "marked"
-                            ? "📋 Being Evaluated"
-                            : result.isPassed
-                              ? "✅ Passed"
-                              : "❌ Failed"}
+                            : result.reviewStatus === "in-progress" ||
+                                result.reviewStatus === "marked"
+                              ? "📋 Being Evaluated"
+                              : result.isPassed
+                                ? "✅ Passed"
+                                : "❌ Failed"}
                         </span>
                       </div>
 
@@ -206,8 +213,11 @@ const UserResults = () => {
                           </div>
                           <div className="score-details">
                             <p>
-                              <strong>Score:</strong> {result.manualReviewPending ? "0" : result.obtainedMarks}/
-                              {result.totalMarks}
+                              <strong>Score:</strong>{" "}
+                              {result.manualReviewPending
+                                ? "0"
+                                : result.obtainedMarks}
+                              /{result.totalMarks}
                             </p>
                             <p>
                               <strong>Date:</strong>{" "}
@@ -264,8 +274,10 @@ const UserResults = () => {
                     <div className="score-item">
                       <label>Total Score</label>
                       <p>
-                        {selectedResult.manualReviewPending ? "0" : selectedResult.obtainedMarks}/
-                        {selectedResult.totalMarks}
+                        {selectedResult.manualReviewPending
+                          ? "0"
+                          : selectedResult.obtainedMarks}
+                        /{selectedResult.totalMarks}
                       </p>
                     </div>
                     <div className="score-item">
@@ -298,8 +310,10 @@ const UserResults = () => {
                     <div className="quiz-summary">
                       <p>
                         <strong>Overall Score:</strong>{" "}
-                        {selectedResult.manualReviewPending ? "0" : selectedResult.obtainedMarks}/
-                        {selectedResult.totalMarks} (
+                        {selectedResult.manualReviewPending
+                          ? "0"
+                          : selectedResult.obtainedMarks}
+                        /{selectedResult.totalMarks} (
                         {selectedResult.manualReviewPending
                           ? "Pending"
                           : `${selectedResult.percentage.toFixed(2)}%`}
@@ -331,9 +345,11 @@ const UserResults = () => {
                         {selectedResult.answers.map((answer, index) => {
                           // If there's any manual review pending for the entire result,
                           // hide all question results (including MCQs)
-                          const overallPending = selectedResult.manualReviewPending;
-                          
-                          const isPending = overallPending || answer.requiresManualReview;
+                          const overallPending =
+                            selectedResult.manualReviewPending;
+
+                          const isPending =
+                            overallPending || answer.requiresManualReview;
                           const isCorrect = answer.isCorrect === true;
                           const isIncorrect = answer.isCorrect === false;
                           const isManual =

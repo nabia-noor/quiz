@@ -1,3 +1,4 @@
+// App.js
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -5,40 +6,45 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+
+// Admin Components
 import AdminLogin from "./components/AdminLogin";
 import Dashboard from "./components/Dashboard";
 import ClassManagement from "./components/ClassManagement";
 import QuizManagement from "./components/QuizManagement";
 import QuestionManagement from "./components/QuestionManagement";
-import UserQuestions from "./components/UserQuestions";
+import Courses from "./components/Courses";
+import TeacherManagement from "./components/TeacherManagement";
+import TeacherProfile from "./components/TeacherProfile";
+
+// User Components
 import UserLogin from "./components/UserLogin";
 import UserDashboard from "./components/UserDashboard";
 import QuizList from "./components/QuizList";
 import QuizAttempt from "./components/QuizAttempt";
 import UserResults from "./components/UserResults";
+import UserQuestions from "./components/UserQuestions";
+
+// Teacher Components
 import TeacherLogin from "./components/TeacherLogin";
 import TeacherDashboard from "./components/TeacherDashboard";
-import TeacherManagement from "./components/TeacherManagement";
-import TeacherProfile from "./components/TeacherProfile";
 import TeacherCreateQuiz from "./components/TeacherCreateQuiz";
 import TeacherResults from "./components/TeacherResults";
 import TeacherBatchCourses from "./components/TeacherBatchCourses";
 import TeacherQuizManagement from "./components/TeacherQuizManagement";
 import TeacherQuizAttempts from "./components/TeacherQuizAttempts";
 import TeacherMarkQuiz from "./components/TeacherMarkQuiz";
+
 import "./App.css";
 
-// Protected Route Components
+// ------------------------ Protected Route Components ------------------------
 function AdminProtectedRoute({ children }) {
   const adminToken = localStorage.getItem("adminToken");
   const userToken = localStorage.getItem("userToken");
 
-  // Only admin can access admin pages
-  if (!adminToken) {
-    return <Navigate to="/admin/login" replace />;
-  }
+  if (!adminToken) return <Navigate to="/admin/login" replace />;
 
-  // If user token also exists, remove it (ensure only one role at a time)
+  // Clear other roles
   if (userToken) {
     localStorage.removeItem("userToken");
     localStorage.removeItem("userId");
@@ -54,16 +60,9 @@ function UserProtectedRoute({ children }) {
   const adminToken = localStorage.getItem("adminToken");
   const teacherToken = localStorage.getItem("teacherToken");
 
-  // Only user can access user pages
-  if (!userToken) {
-    return <Navigate to="/user/login" replace />;
-  }
+  if (!userToken) return <Navigate to="/user/login" replace />;
 
-  // If admin or teacher token also exists, remove it (ensure only one role at a time)
-  if (adminToken) {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminData");
-  }
+  if (adminToken) localStorage.removeItem("adminToken");
   if (teacherToken) {
     localStorage.removeItem("teacherToken");
     localStorage.removeItem("teacherId");
@@ -80,42 +79,26 @@ function TeacherProtectedRoute({ children }) {
   const adminToken = localStorage.getItem("adminToken");
   const userToken = localStorage.getItem("userToken");
 
-  // Only teacher can access teacher pages
-  if (!teacherToken) {
-    return <Navigate to="/teacher/login" replace />;
-  }
+  if (!teacherToken) return <Navigate to="/teacher/login" replace />;
 
-  // If admin or user token also exists, remove it (ensure only one role at a time)
-  if (adminToken) {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminData");
-  }
-  if (userToken) {
-    localStorage.removeItem("userToken");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("userName");
-    localStorage.removeItem("userEmail");
-  }
+  if (adminToken) localStorage.removeItem("adminToken");
+  if (userToken) localStorage.removeItem("userToken");
 
   return children;
 }
 
+// ------------------------ App Component ------------------------
 function App() {
-  // Smart redirect based on who is logged in
+  // Root redirect based on logged-in role
   const RootRedirect = () => {
     const adminToken = localStorage.getItem("adminToken");
-    const userToken = localStorage.getItem("userToken");
     const teacherToken = localStorage.getItem("teacherToken");
+    const userToken = localStorage.getItem("userToken");
 
-    if (adminToken) {
-      return <Navigate to="/admin/dashboard" replace />;
-    }
-    if (teacherToken) {
-      return <Navigate to="/teacher/dashboard" replace />;
-    }
-    if (userToken) {
-      return <Navigate to="/user/dashboard" replace />;
-    }
+    if (adminToken) return <Navigate to="/admin/dashboard" replace />;
+    if (teacherToken) return <Navigate to="/teacher/dashboard" replace />;
+    if (userToken) return <Navigate to="/user/dashboard" replace />;
+
     return <Navigate to="/user/login" replace />;
   };
 
@@ -123,7 +106,7 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          {/* Smart root redirect based on login status */}
+          {/* Root redirect */}
           <Route path="/" element={<RootRedirect />} />
 
           {/* User Routes */}
@@ -169,10 +152,8 @@ function App() {
             }
           />
 
-          {/* Admin Login */}
+          {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
-
-          {/* Protected Admin Routes */}
           <Route
             path="/admin/dashboard"
             element={
@@ -182,26 +163,18 @@ function App() {
             }
           />
           <Route
-            path="/admin/teachers"
-            element={
-              <AdminProtectedRoute>
-                <TeacherManagement />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/teacher/:id"
-            element={
-              <AdminProtectedRoute>
-                <TeacherProfile />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
             path="/admin/classes"
             element={
               <AdminProtectedRoute>
                 <ClassManagement />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/courses"
+            element={
+              <AdminProtectedRoute>
+                <Courses />
               </AdminProtectedRoute>
             }
           />
@@ -229,25 +202,22 @@ function App() {
               </AdminProtectedRoute>
             }
           />
-          {/* Admin Results routes REMOVED - Quiz submissions are only accessible to teachers */}
-          {/* 
           <Route
-            path="/admin/results"
+            path="/admin/teachers"
             element={
               <AdminProtectedRoute>
-                <ResultManagement />
+                <TeacherManagement />
               </AdminProtectedRoute>
             }
           />
           <Route
-            path="/admin/results/:id"
+            path="/admin/teacher/:id"
             element={
               <AdminProtectedRoute>
-                <AdminResultDetail />
+                <TeacherProfile />
               </AdminProtectedRoute>
             }
           />
-          */}
 
           {/* Teacher Routes */}
           <Route path="/teacher/login" element={<TeacherLogin />} />
@@ -299,8 +269,6 @@ function App() {
               </TeacherProtectedRoute>
             }
           />
-
-          {/* Teacher: View courses for a specific batch */}
           <Route
             path="/teacher/batch/:classId"
             element={
@@ -310,7 +278,7 @@ function App() {
             }
           />
 
-          {/* Catch all - redirect to user login */}
+          {/* Catch all */}
           <Route path="*" element={<Navigate to="/user/login" replace />} />
         </Routes>
       </div>

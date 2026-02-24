@@ -45,13 +45,13 @@
                                  └─ If createdBy mismatch
                                     ▼
                                     ❌ "Not authorized"   ← ERROR!
-                                    
+
                     ┌────────────────────────────┐
                     │ Frontend shows error:      │
                     │ "No Quiz Found"            │
                     │ OR "Not authorized"        │
                     └────────────────────────────┘
-                    
+
 User is stuck ❌
 Cannot mark quiz ❌
 Cannot see student answers ❌
@@ -124,7 +124,7 @@ Cannot see student answers ❌
                                     ▼
                                     ✅ Return proper
                                        403 error
-                                    
+
                     ┌────────────────────────────┐
                     │ Frontend receives:         │
                     │ {                          │
@@ -248,7 +248,7 @@ return res.status(200).json({
     isPassed: result.isPassed,
     submittedAt: result.submittedAt,
     reviewStatus: result.reviewStatus,
-    reviewComments: result.reviewComments || "",  // ✅ Now included
+    reviewComments: result.reviewComments || "", // ✅ Now included
     answers: result.answers.map((ans) => ({
       // ... answer fields
     })),
@@ -348,7 +348,7 @@ Query 1: Find Result by ID (~5ms)
   └─ Populate quizId (missing createdBy) (~2ms)
   └─ Populate answers.questionId (~3ms)
      Total: ~12ms
-     
+
 Query 2: Find Quiz by ID (~5ms)
   └─ Get createdBy field (~2ms)
      Total: ~7ms
@@ -356,7 +356,7 @@ Query 2: Find Quiz by ID (~5ms)
 Query 3 (if needed): Find Questions (~5ms)
   └─ Recalculate total marks (~3ms)
      Total: ~8ms
-     
+
 Total Time: ~27ms per request ❌
 
 
@@ -371,7 +371,7 @@ Query 1: Find Result by ID (~5ms)
 Query 2 (conditional): Find Questions (~5ms)
   └─ Only if totalMarks missing (~3ms)
      Total: ~8ms
-     
+
 Total Time: ~12-20ms per request ✅
 
 IMPROVEMENT: 30-55% faster! 🚀
@@ -381,15 +381,15 @@ IMPROVEMENT: 30-55% faster! 🚀
 
 ## Status: FIXED ✅
 
-| Component | Status | Details |
-|-----------|--------|---------|
-| **Backend Query** | ✅ Fixed | Includes createdBy in population |
-| **Authorization** | ✅ Fixed | Uses populated data with proper checks |
-| **Error Handling** | ✅ Fixed | Null checks prevent crashes |
-| **Response Fields** | ✅ Fixed | Includes all needed fields |
-| **Performance** | ✅ Optimized | Reduced database queries |
-| **Frontend** | ✅ Works | Receives complete data |
-| **Complete Workflow** | ✅ Works | Student submit → teacher mark → student view |
+| Component             | Status       | Details                                      |
+| --------------------- | ------------ | -------------------------------------------- |
+| **Backend Query**     | ✅ Fixed     | Includes createdBy in population             |
+| **Authorization**     | ✅ Fixed     | Uses populated data with proper checks       |
+| **Error Handling**    | ✅ Fixed     | Null checks prevent crashes                  |
+| **Response Fields**   | ✅ Fixed     | Includes all needed fields                   |
+| **Performance**       | ✅ Optimized | Reduced database queries                     |
+| **Frontend**          | ✅ Works     | Receives complete data                       |
+| **Complete Workflow** | ✅ Works     | Student submit → teacher mark → student view |
 
 ---
 

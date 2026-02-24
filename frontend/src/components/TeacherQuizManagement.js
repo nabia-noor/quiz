@@ -102,11 +102,15 @@ function TeacherQuizManagement() {
 
     // Validate options based on question type
     if (formData.questionType !== "typed") {
-      const filledOptions = formData.options.filter((opt) => opt.optionText.trim());
+      const filledOptions = formData.options.filter((opt) =>
+        opt.optionText.trim(),
+      );
       const hasCorrectAnswer = filledOptions.some((opt) => opt.isCorrect);
 
       if (filledOptions.length < 2) {
-        setError(`At least 2 options are required for ${formData.questionType === 'mcq' ? 'Multiple Choice' : 'True/False'} questions`);
+        setError(
+          `At least 2 options are required for ${formData.questionType === "mcq" ? "Multiple Choice" : "True/False"} questions`,
+        );
         return;
       }
 
@@ -120,9 +124,10 @@ function TeacherQuizManagement() {
       setSubmitting(true);
 
       // Prepare options based on question type
-      const filledOptions = formData.questionType === "typed" 
-        ? [] 
-        : formData.options.filter((opt) => opt.optionText.trim());
+      const filledOptions =
+        formData.questionType === "typed"
+          ? []
+          : formData.options.filter((opt) => opt.optionText.trim());
 
       if (editingQuestionId) {
         // Update question
@@ -198,7 +203,11 @@ function TeacherQuizManagement() {
   };
 
   const handleDeleteQuiz = async () => {
-    if (window.confirm("Are you sure you want to delete this quiz? This action cannot be undone.")) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this quiz? This action cannot be undone.",
+      )
+    ) {
       try {
         const res = await teacherQuizAPI.delete(quizId);
         if (res.success) {
@@ -217,7 +226,9 @@ function TeacherQuizManagement() {
       setError("Add at least one question before publishing");
       return;
     }
-    if (window.confirm("Publish this quiz? Published quizzes cannot be edited.")) {
+    if (
+      window.confirm("Publish this quiz? Published quizzes cannot be edited.")
+    ) {
       try {
         const res = await teacherQuizAPI.update(quizId, { isActive: true });
         if (res.success) {
@@ -239,8 +250,12 @@ function TeacherQuizManagement() {
       duration: quiz.duration || 30,
       totalMarks: quiz.totalMarks || 100,
       passingMarks: quiz.passingMarks || 40,
-      startDate: quiz.startDate ? new Date(quiz.startDate).toISOString().slice(0, 16) : "",
-      expiryDate: quiz.expiryDate ? new Date(quiz.expiryDate).toISOString().slice(0, 16) : "",
+      startDate: quiz.startDate
+        ? new Date(quiz.startDate).toISOString().slice(0, 16)
+        : "",
+      expiryDate: quiz.expiryDate
+        ? new Date(quiz.expiryDate).toISOString().slice(0, 16)
+        : "",
     });
     setShowEditQuizModal(true);
   };
@@ -256,7 +271,7 @@ function TeacherQuizManagement() {
   const handleUpdateQuiz = async (e) => {
     e.preventDefault();
     setError("");
-    
+
     if (!editQuizData.title.trim()) {
       setError("Quiz title is required");
       return;
@@ -321,7 +336,9 @@ function TeacherQuizManagement() {
         <nav className="quiz-management-nav">
           <div className="nav-brand">
             <h1>📚 Quiz Management</h1>
-            <p className="teacher-name">Teacher: {teacherData.name || "Teacher"}</p>
+            <p className="teacher-name">
+              Teacher: {teacherData.name || "Teacher"}
+            </p>
           </div>
           <div className="nav-links">
             <Link to="/teacher/dashboard">Dashboard</Link>
@@ -333,8 +350,12 @@ function TeacherQuizManagement() {
           </div>
         </nav>
         <div className="content">
-          <div className="error">Quiz not found or you do not have permission to access it</div>
-          <Link to="/teacher/dashboard" className="btn-back">← Back to Dashboard</Link>
+          <div className="error">
+            Quiz not found or you do not have permission to access it
+          </div>
+          <Link to="/teacher/dashboard" className="btn-back">
+            ← Back to Dashboard
+          </Link>
         </div>
       </div>
     );
@@ -345,7 +366,9 @@ function TeacherQuizManagement() {
       <nav className="quiz-management-nav">
         <div className="nav-brand">
           <h1>📚 {quiz.title}</h1>
-          <p className="teacher-name">Teacher: {teacherData.name || "Teacher"}</p>
+          <p className="teacher-name">
+            Teacher: {teacherData.name || "Teacher"}
+          </p>
         </div>
         <div className="nav-links">
           <Link to="/teacher/dashboard">Dashboard</Link>
@@ -362,7 +385,10 @@ function TeacherQuizManagement() {
         {success && <div className="alert alert-success">{success}</div>}
 
         {showEditQuizModal && (
-          <div className="modal-overlay" onClick={() => setShowEditQuizModal(false)}>
+          <div
+            className="modal-overlay"
+            onClick={() => setShowEditQuizModal(false)}
+          >
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <h2>Edit Quiz</h2>
               <form onSubmit={handleUpdateQuiz} className="edit-quiz-form">
@@ -452,7 +478,11 @@ function TeacherQuizManagement() {
                 </div>
 
                 <div className="form-actions">
-                  <button type="submit" disabled={submitting} className="btn-submit">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="btn-submit"
+                  >
                     {submitting ? "Updating..." : "Update Quiz"}
                   </button>
                   <button
@@ -470,17 +500,29 @@ function TeacherQuizManagement() {
 
         <div className="quiz-header">
           <div className="quiz-info">
-            <p><strong>Batch:</strong> {quiz.classId?.name || "N/A"}</p>
-            <p><strong>Duration:</strong> {quiz.duration} minutes</p>
-            <p><strong>Total Marks:</strong> {quiz.totalMarks}</p>
-            <p><strong>Passing Marks:</strong> {quiz.passingMarks}</p>
+            <p>
+              <strong>Batch:</strong> {quiz.classId?.name || "N/A"}
+            </p>
+            <p>
+              <strong>Duration:</strong> {quiz.duration} minutes
+            </p>
+            <p>
+              <strong>Total Marks:</strong> {quiz.totalMarks}
+            </p>
+            <p>
+              <strong>Passing Marks:</strong> {quiz.passingMarks}
+            </p>
             <p>
               <strong>Start Date:</strong>{" "}
-              {quiz.startDate ? new Date(quiz.startDate).toLocaleString() : "N/A"}
+              {quiz.startDate
+                ? new Date(quiz.startDate).toLocaleString()
+                : "N/A"}
             </p>
             <p>
               <strong>Expiry Date:</strong>{" "}
-              {quiz.expiryDate ? new Date(quiz.expiryDate).toLocaleString() : "N/A"}
+              {quiz.expiryDate
+                ? new Date(quiz.expiryDate).toLocaleString()
+                : "N/A"}
             </p>
             <p>
               <strong>Status:</strong>{" "}
@@ -525,7 +567,9 @@ function TeacherQuizManagement() {
 
           {showQuestionForm && !quiz.isActive && (
             <div className="question-form-container">
-              <h3>{editingQuestionId ? "Edit Question" : "Add New Question"}</h3>
+              <h3>
+                {editingQuestionId ? "Edit Question" : "Add New Question"}
+              </h3>
               <form onSubmit={handleAddQuestion} className="question-form">
                 <div className="form-group">
                   <label>Question Type *</label>
@@ -561,7 +605,11 @@ function TeacherQuizManagement() {
                           placeholder={`Option ${index + 1}`}
                           value={option.optionText}
                           onChange={(e) =>
-                            handleOptionChange(index, "optionText", e.target.value)
+                            handleOptionChange(
+                              index,
+                              "optionText",
+                              e.target.value,
+                            )
                           }
                         />
                         <label className="checkbox">
@@ -569,7 +617,11 @@ function TeacherQuizManagement() {
                             type="checkbox"
                             checked={option.isCorrect}
                             onChange={(e) =>
-                              handleOptionChange(index, "isCorrect", e.target.checked)
+                              handleOptionChange(
+                                index,
+                                "isCorrect",
+                                e.target.checked,
+                              )
                             }
                           />
                           Correct
@@ -592,8 +644,16 @@ function TeacherQuizManagement() {
                 </div>
 
                 <div className="form-actions">
-                  <button type="submit" disabled={submitting} className="btn-submit">
-                    {submitting ? "Saving..." : editingQuestionId ? "Update Question" : "Add Question"}
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="btn-submit"
+                  >
+                    {submitting
+                      ? "Saving..."
+                      : editingQuestionId
+                        ? "Update Question"
+                        : "Add Question"}
                   </button>
                   <button
                     type="button"
@@ -608,20 +668,30 @@ function TeacherQuizManagement() {
           )}
 
           {questions.length === 0 ? (
-            <p className="no-questions">No questions added yet. {!quiz.isActive && "Add questions to your quiz."}</p>
+            <p className="no-questions">
+              No questions added yet.{" "}
+              {!quiz.isActive && "Add questions to your quiz."}
+            </p>
           ) : (
             <div className="questions-list">
               {questions.map((question, index) => (
                 <div key={question._id} className="question-card">
                   <div className="question-header">
-                    <h4>Q{index + 1}: {question.questionText}</h4>
-                    <span className="marks">{question.marks} mark{question.marks > 1 ? "s" : ""}</span>
+                    <h4>
+                      Q{index + 1}: {question.questionText}
+                    </h4>
+                    <span className="marks">
+                      {question.marks} mark{question.marks > 1 ? "s" : ""}
+                    </span>
                   </div>
                   <div className="question-content">
                     {question.options && question.options.length > 0 && (
                       <ul className="options-list">
                         {question.options.map((opt, idx) => (
-                          <li key={idx} className={opt.isCorrect ? "correct" : ""}>
+                          <li
+                            key={idx}
+                            className={opt.isCorrect ? "correct" : ""}
+                          >
                             {opt.optionText}
                             {opt.isCorrect && " ✓"}
                           </li>

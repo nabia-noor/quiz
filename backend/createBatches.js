@@ -4,7 +4,7 @@ import Class from "./models/classModel.js";
 // Connect to MongoDB
 const connectDB = async () => {
   await mongoose.connect(
-    "mongodb+srv://quiz:helloworld123@cluster0.gnw23kh.mongodb.net/Quiz"
+    "mongodb+srv://quiz:helloworld123@cluster0.gnw23kh.mongodb.net/Quiz",
   );
   console.log("DB CONNECTED");
 };

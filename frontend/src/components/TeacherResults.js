@@ -47,7 +47,7 @@ function TeacherResults() {
       if (response.success) {
         const quizzes = response.quizzes || [];
         setQuizzes(quizzes);
-        
+
         // Fetch attempt stats for each quiz
         const quizzesWithAttemptStats = [];
         for (const quiz of quizzes) {
@@ -56,15 +56,19 @@ function TeacherResults() {
             if (attemptResponse.success) {
               const attempts = attemptResponse.results || [];
               const pendingReview = attempts.filter(
-                (a) => a.reviewStatus === "pending" || a.reviewStatus === "in-progress"
+                (a) =>
+                  a.reviewStatus === "pending" ||
+                  a.reviewStatus === "in-progress",
               ).length;
-              
+
               quizzesWithAttemptStats.push({
                 ...quiz,
                 totalAttempts: attempts.length,
                 pendingReview,
                 markedAttempts: attempts.filter(
-                  (a) => a.reviewStatus === "marked" || a.reviewStatus === "published"
+                  (a) =>
+                    a.reviewStatus === "marked" ||
+                    a.reviewStatus === "published",
                 ).length,
               });
             }
@@ -100,7 +104,9 @@ function TeacherResults() {
       <nav className="results-nav">
         <div className="nav-brand">
           <h1>📊 Results & Marking</h1>
-          <p className="teacher-name">Teacher: {teacherData.name || "Teacher"}</p>
+          <p className="teacher-name">
+            Teacher: {teacherData.name || "Teacher"}
+          </p>
         </div>
         <div className="nav-links">
           <Link to="/teacher/dashboard">Dashboard</Link>
@@ -170,9 +176,7 @@ function TeacherResults() {
                       Review & Mark ({quiz.totalAttempts})
                     </Link>
                   ) : (
-                    <div className="no-attempts-badge">
-                      No attempts yet
-                    </div>
+                    <div className="no-attempts-badge">No attempts yet</div>
                   )}
                 </div>
               ))}

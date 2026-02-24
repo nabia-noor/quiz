@@ -1,7 +1,9 @@
 # Quiz Marking System - Quick Start Guide
 
 ## System Overview
+
 The quiz marking system enables a complete workflow where:
+
 1. Students attempt quizzes
 2. Attempts appear on teacher dashboard
 3. Teachers review and mark student answers
@@ -30,11 +32,13 @@ The quiz marking system enables a complete workflow where:
 **Page**: `/teacher/quiz/:quizId/attempts`
 
 **What You See**:
+
 - Quiz title and total marks
 - Statistics: Total attempts, Submitted, Pending, Marked
 - Table with all student attempts
 
 **Column Information**:
+
 - **Student Name**: Link to identify which student
 - **Marks Obtained**: Current marks (0 if not yet marked)
 - **Total Marks**: Out of this many points
@@ -48,6 +52,7 @@ The quiz marking system enables a complete workflow where:
 **Page**: `/teacher/result/:resultId/mark`
 
 **Steps**:
+
 1. Review student's answers (MCQ options shown, text answers in box)
 2. For each question, enter marks in the input field
 3. Current marks calculation updates in real-time
@@ -56,12 +61,14 @@ The quiz marking system enables a complete workflow where:
 6. Click "Save & Mark" button
 
 **Mark Entry**:
+
 - Input field shows max marks available
 - Can't enter more than max marks
 - Marks auto-calculate for MCQ (already done)
 - Only edit for manual/text questions
 
 **Information Shown**:
+
 - Student info (name, email, submission date)
 - Original vs. Current marks
 - Status badge (Pending/In Progress/Marked/Published)
@@ -71,10 +78,12 @@ The quiz marking system enables a complete workflow where:
 ### Publishing Results
 
 **Option 1**: During Marking
+
 - Check "Publish result immediately after marking"
 - Click "Save & Mark"
 
 **Option 2**: After Marking
+
 - Student status will show "Marked"
 - Can come back and publish later
 - Publish button appears after marking
@@ -101,12 +110,14 @@ The quiz marking system enables a complete workflow where:
 3. Your quiz attempts will show with status
 
 **Status Meanings**:
+
 - **Under Review**: Teacher received your attempt, starting to mark
 - **Being Evaluated**: Teacher is actively marking your quiz
 - **Passed** ✅: Published result - you passed!
 - **Failed** ❌: Published result - you didn't pass
 
 **What You Can See**:
+
 - Quiz title
 - Your marks (hidden until published)
 - Submission date and time
@@ -143,6 +154,7 @@ TEACHER PUBLISHES
 ## Feature Checklist
 
 ### Teacher Features
+
 - ✅ View all quiz attempts for each quiz
 - ✅ See student name, email, submission time
 - ✅ Review each student's answers
@@ -155,6 +167,7 @@ TEACHER PUBLISHES
 - ✅ Filter attempts by submission status
 
 ### Student Features
+
 - ✅ Submit quiz attempts
 - ✅ See attempt submission status
 - ✅ View published results only
@@ -168,17 +181,22 @@ TEACHER PUBLISHES
 ## Dashboard Indicators
 
 ### Teacher Dashboard
+
 **Stat Card**: "Pending Reviews" (orange/yellow)
+
 - Shows total number of unpublished attempts across all quizzes
 - Alerts teacher to pending work
 
 **Section**: "Quizzes Awaiting Review"
+
 - Only shows quizzes with pending or in-progress attempts
 - Each card shows pending count in red badge
 - Quick link to review attempts
 
 ### Student Dashboard
+
 **Section**: "My Results"
+
 - Tab filters: All, Under Review, Passed, Failed
 - Shows submission date
 - Color-coded by status
@@ -188,20 +206,24 @@ TEACHER PUBLISHES
 ## Troubleshooting
 
 **Q: I don't see any attempts on my quiz**
+
 - A: Make sure the quiz is active and students have attempted it
 - Check the Batch/Class is correctly assigned
 
 **Q: My marks aren't being saved**
+
 - A: Check all required fields are filled
 - Ensure marks don't exceed maximum for each question
 - Check you have permission (must be quiz creator)
 
 **Q: Student can't see results**
+
 - A: Results must be published first (status = "Published")
 - Check teacher published the quiz
 - Student must look in "My Results" section
 
 **Q: Why does it say "Being Evaluated"?**
+
 - A: Teacher has marked it but not yet published
 - Once teacher publishes, status will change to Pass/Fail
 
@@ -210,6 +232,7 @@ TEACHER PUBLISHES
 ## Best Practices
 
 ### For Teachers
+
 1. Review all attempts for a quiz before publishing
 2. Add helpful comments on difficult questions
 3. Check calculations are correct before saving
@@ -217,6 +240,7 @@ TEACHER PUBLISHES
 5. Use batch marking if many similar responses
 
 ### For Students
+
 1. Attempt quizzes within the valid date range
 2. Check results section regularly for published results
 3. Read teacher feedback carefully
@@ -227,12 +251,14 @@ TEACHER PUBLISHES
 ## Technical Details
 
 ### API Endpoints Used
+
 - `GET /api/result/teacher/quiz/:quizId` - Get attempts
 - `GET /api/result/teacher/attempt/:resultId` - Get details
 - `PUT /api/result/teacher/:resultId/mark` - Save marks
 - `PUT /api/result/teacher/:resultId/publish` - Publish result
 
 ### Authorization
+
 - Teachers: Must own the quiz (created by them)
 - Students: Can only see published results for quizzes they attempted
 - Role-based access control enforced
@@ -242,6 +268,7 @@ TEACHER PUBLISHES
 ## Data Fields
 
 ### Result Object
+
 ```javascript
 {
   _id: ObjectId,
@@ -274,6 +301,7 @@ TEACHER PUBLISHES
 ## Support
 
 For issues or feature requests related to the marking system, ensure:
+
 1. All backend endpoints are running
 2. Teacher has valid authentication token
 3. Quiz has questions before attempting

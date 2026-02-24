@@ -1,6 +1,12 @@
 import express from "express";
 import { adminAuthMiddleware } from "../middleware/authMiddleware.js";
-import { createSubject, getAllSubjects, searchSubjects, updateSubject, deleteSubject } from "../controllers/subjectController.js";
+import {
+  createSubject,
+  getAllSubjects,
+  searchSubjects,
+  updateSubject,
+  deleteSubject,
+} from "../controllers/subjectController.js";
 
 const subjectRouter = express.Router();
 

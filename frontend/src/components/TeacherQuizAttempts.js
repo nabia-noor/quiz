@@ -38,10 +38,11 @@ function TeacherQuizAttempts() {
         const total = attemptsResponse.attempts?.length || 0;
         const submitted = total;
         const pending = (attemptsResponse.attempts || []).filter(
-          (a) => a.reviewStatus === "pending" || a.reviewStatus === "in-progress"
+          (a) =>
+            a.reviewStatus === "pending" || a.reviewStatus === "in-progress",
         ).length;
         const marked = (attemptsResponse.attempts || []).filter(
-          (a) => a.reviewStatus === "marked" || a.reviewStatus === "published"
+          (a) => a.reviewStatus === "marked" || a.reviewStatus === "published",
         ).length;
 
         setStats({
@@ -126,10 +127,10 @@ function TeacherQuizAttempts() {
                   attempt.reviewStatus === "pending"
                     ? "status-pending"
                     : attempt.reviewStatus === "in-progress"
-                    ? "status-in-progress"
-                    : attempt.reviewStatus === "marked"
-                    ? "status-marked"
-                    : "status-published";
+                      ? "status-in-progress"
+                      : attempt.reviewStatus === "marked"
+                        ? "status-marked"
+                        : "status-published";
 
                 const passFailColor = attempt.isPassed ? "pass" : "fail";
 
@@ -147,16 +148,18 @@ function TeacherQuizAttempts() {
                         {attempt.isPassed ? "✓ Pass" : "✗ Fail"}
                       </span>
                     </td>
-                    <td>{new Date(attempt.submittedAt).toLocaleDateString()}</td>
+                    <td>
+                      {new Date(attempt.submittedAt).toLocaleDateString()}
+                    </td>
                     <td>
                       <span className={`status ${statusColor}`}>
                         {attempt.reviewStatus === "pending"
                           ? "Pending"
                           : attempt.reviewStatus === "in-progress"
-                          ? "In Progress"
-                          : attempt.reviewStatus === "marked"
-                          ? "Marked"
-                          : "Published"}
+                            ? "In Progress"
+                            : attempt.reviewStatus === "marked"
+                              ? "Marked"
+                              : "Published"}
                       </span>
                     </td>
                     <td>

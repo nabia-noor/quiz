@@ -7,9 +7,10 @@ function ClassManagement() {
   const [classes, setClasses] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
+    degree: "",
+    program: "",
+    session: "",
     semester: "",
-    description: "",
     isActive: true,
   });
   const [editingId, setEditingId] = useState(null);
@@ -39,8 +40,19 @@ function ClassManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (
+      !formData.degree ||
+      !formData.program ||
+      !formData.session ||
+      !formData.semester
+    ) {
+      alert("All fields are required");
+      return;
+    }
+
     try {
       let result;
+
       if (editingId) {
         result = await classAPI.update(editingId, formData);
       } else {
@@ -50,19 +62,18 @@ function ClassManagement() {
       if (result.success) {
         fetchClasses();
         resetForm();
-      } else {
-        alert(result.message || "Operation failed");
       }
     } catch (error) {
-      alert("An error occurred");
+      alert("Error occurred");
     }
   };
 
   const handleEdit = (classData) => {
     setFormData({
-      name: classData.name,
-      semester: classData.semester,
-      description: classData.description || "",
+      degree: classData.degree || "",
+      program: classData.program || "",
+      session: classData.session || "",
+      semester: classData.semester || "",
       isActive: classData.isActive,
     });
     setEditingId(classData._id);
@@ -70,41 +81,38 @@ function ClassManagement() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this class?")) {
-      try {
-        const result = await classAPI.delete(id);
-        if (result.success) {
-          fetchClasses();
-        } else {
-          alert(result.message || "Delete failed");
-        }
-      } catch (error) {
-        alert("An error occurred");
+    if (window.confirm("Delete this class?")) {
+      const result = await classAPI.delete(id);
+      if (result.success) {
+        fetchClasses();
       }
     }
   };
 
   const handleToggleStatus = async (cls) => {
-    try {
-      const payload = {
-        name: cls.name,
-        semester: cls.semester,
-        description: cls.description,
-        isActive: !cls.isActive,
-      };
-      const result = await classAPI.update(cls._id, payload);
-      if (result.success) {
-        fetchClasses();
-      } else {
-        alert(result.message || "Update failed");
-      }
-    } catch (error) {
-      alert("An error occurred while updating status");
+    const payload = {
+      degree: cls.degree,
+      program: cls.program,
+      session: cls.session,
+      semester: cls.semester,
+      isActive: !cls.isActive,
+    };
+
+    const result = await classAPI.update(cls._id, payload);
+
+    if (result.success) {
+      fetchClasses();
     }
   };
 
   const resetForm = () => {
-    setFormData({ name: "", semester: "", description: "", isActive: true });
+    setFormData({
+      degree: "",
+      program: "",
+      session: "",
+      semester: "",
+      isActive: true,
+    });
     setEditingId(null);
     setShowForm(false);
   };
@@ -119,11 +127,13 @@ function ClassManagement() {
     <div className="dashboard-container">
       <nav className="dashboard-nav">
         <h1>Quiz Admin Panel</h1>
+
         <div className="nav-links">
           <Link to="/admin/dashboard">Dashboard</Link>
           <Link to="/admin/classes">Classes/Semesters</Link>
           <Link to="/admin/quizzes">Quizzes</Link>
           <Link to="/admin/results">Results</Link>
+
           <button onClick={handleLogout} className="btn-logout">
             Logout
           </button>
@@ -133,6 +143,7 @@ function ClassManagement() {
       <div className="dashboard-content">
         <div className="page-header">
           <h2>Classes / Semesters Management</h2>
+
           <button
             onClick={() => setShowForm(!showForm)}
             className="btn-primary"
@@ -144,43 +155,72 @@ function ClassManagement() {
         {showForm && (
           <div className="form-container">
             <h3>{editingId ? "Edit Class" : "Add New Class"}</h3>
+
             <form onSubmit={handleSubmit}>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Class Name *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
+                  <label>Degree</label>
+                  <select
+                    name="degree"
+                    value={formData.degree}
                     onChange={handleChange}
-                    required
-                  />
+                  >
+                    <option value="">Select</option>
+                    <option value="BS">BS</option>
+                    <option value="MS">MS</option>
+                    <option value="PhD">PhD</option>
+                  </select>
                 </div>
+
                 <div className="form-group">
-                  <label>Semester *</label>
-                  <input
-                    type="text"
+                  <label>Program</label>
+                  <select
+                    name="program"
+                    value={formData.program}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select</option>
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="IT">IT</option>
+                    <option value="Software Engineering">
+                      Software Engineering
+                    </option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Session</label>
+                  <select
+                    name="session"
+                    value={formData.session}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select</option>
+                    <option value="2026">2026</option>
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Semester</label>
+                  <select
                     name="semester"
                     value={formData.semester}
                     onChange={handleChange}
-                    required
-                    placeholder="e.g., Fall 2024"
-                  />
+                  >
+                    <option value="">Select</option>
+                    <option value="Fall">Fall</option>
+                    <option value="Spring">Spring</option>
+                  </select>
                 </div>
               </div>
-              <div className="form-group">
-                <label>Description</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows="3"
-                />
-              </div>
+
               <div className="form-actions">
                 <button type="submit" className="btn-primary">
                   {editingId ? "Update" : "Create"}
                 </button>
+
                 <button
                   type="button"
                   onClick={resetForm}
@@ -198,45 +238,31 @@ function ClassManagement() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Class Name</th>
+                  <th>Degree</th>
+                  <th>Program</th>
+                  <th>Session</th>
                   <th>Semester</th>
-                  <th>Description</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
+
               <tbody>
                 {classes.map((cls) => (
                   <tr key={cls._id}>
-                    <td>{cls.name}</td>
+                    <td>{cls.degree}</td>
+                    <td>{cls.program}</td>
+                    <td>{cls.session}</td>
                     <td>{cls.semester}</td>
-                    <td>{cls.description || "-"}</td>
+
+                    <td>{cls.isActive ? "Active" : "Inactive"}</td>
+
                     <td>
-                      <span
-                        className={`status ${
-                          cls.isActive ? "active" : "inactive"
-                        }`}
-                      >
-                        {cls.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => handleEdit(cls)}
-                        className="btn-edit"
-                      >
-                        Edit
+                      <button onClick={() => handleEdit(cls)}>Edit</button>
+                      <button onClick={() => handleToggleStatus(cls)}>
+                        Toggle
                       </button>
-                      <button
-                        onClick={() => handleToggleStatus(cls)}
-                        className={`btn-toggle ${cls.isActive ? "disable" : "enable"}`}
-                      >
-                        {cls.isActive ? "Disable" : "Enable"}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(cls._id)}
-                        className="btn-delete"
-                      >
+                      <button onClick={() => handleDelete(cls._id)}>
                         Delete
                       </button>
                     </td>
@@ -245,7 +271,7 @@ function ClassManagement() {
               </tbody>
             </table>
           ) : (
-            <p className="no-data">No classes created yet.</p>
+            <p>No classes yet</p>
           )}
         </div>
       </div>

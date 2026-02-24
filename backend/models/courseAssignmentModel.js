@@ -2,25 +2,20 @@ import mongoose from "mongoose";
 
 const courseAssignmentSchema = new mongoose.Schema(
   {
-    teacherId: {
+    teacher: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Teacher",
       required: true,
     },
-    classId: {
+    batch: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Class",
       required: true,
     },
-    quizId: {
+    course: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Quiz",
-      default: null,
-    },
-    subjectId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Subject",
-      default: null,
+      ref: "Course",
+      required: true,
     },
     assignedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -30,13 +25,13 @@ const courseAssignmentSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-// Ensure a teacher can't be assigned the same course twice
+// Ensure a teacher can't be assigned the same course in the same batch twice
 courseAssignmentSchema.index(
-  { teacherId: 1, classId: 1 },
-  { unique: true }
+  { teacher: 1, batch: 1, course: 1 },
+  { unique: true },
 );
 
 export default mongoose.models.CourseAssignment ||

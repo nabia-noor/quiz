@@ -45,13 +45,17 @@ function TeacherBatchCourses() {
       <nav className="teacher-batch-nav">
         <div className="nav-brand">
           <h1>📖 Assigned Courses</h1>
-          <p className="teacher-name">Teacher: {teacherData.name || "Teacher"}</p>
+          <p className="teacher-name">
+            Teacher: {teacherData.name || "Teacher"}
+          </p>
         </div>
         <div className="nav-links">
           <Link to="/teacher/dashboard">Dashboard</Link>
           <Link to="/teacher/create-quiz">Create Quiz</Link>
           <Link to="/teacher/results">Results</Link>
-          <button onClick={handleLogout} className="btn-logout">Logout</button>
+          <button onClick={handleLogout} className="btn-logout">
+            Logout
+          </button>
         </div>
       </nav>
 
@@ -71,11 +75,24 @@ function TeacherBatchCourses() {
                   <span>Pass: {course.passingMarks}</span>
                 </div>
                 <div className="course-dates">
-                  <span>Start: {new Date(course.startDate).toLocaleDateString()}</span>
-                  <span>Expiry: {new Date(course.expiryDate).toLocaleDateString()}</span>
+                  <span>
+                    Start: {new Date(course.startDate).toLocaleDateString()}
+                  </span>
+                  <span>
+                    Expiry: {new Date(course.expiryDate).toLocaleDateString()}
+                  </span>
                 </div>
                 <div className="course-actions">
-                  <Link to={`/teacher/quiz/${course._id}`} className="btn-primary">Edit Quiz</Link>
+                  {course.teacherId && course.teacherId === teacherData._id ? (
+                    <Link
+                      to={`/teacher/quiz/${course._id}`}
+                      className="btn-primary"
+                    >
+                      Edit Quiz
+                    </Link>
+                  ) : (
+                    <span className="not-editable">—</span>
+                  )}
                 </div>
               </div>
             ))}

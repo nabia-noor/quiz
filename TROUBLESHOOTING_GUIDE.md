@@ -3,6 +3,7 @@
 ## Issue: "No Quiz Found" Error When Marking Results
 
 ### Root Cause
+
 When teachers clicked "Mark Result", the backend API was returning "Quiz not found" because:
 
 1. **Missing Authorization Check**: The `getStudentAnswerDetails()` method was trying to fetch quiz details with a separate database query instead of using the already-populated quiz data
@@ -96,6 +97,7 @@ const quiz = result.quizId;
 ## Complete Workflow - Now Fixed
 
 ### 1. Student Submits Quiz ✅
+
 ```
 Student clicks "Submit Quiz"
     ↓
@@ -108,6 +110,7 @@ Backend creates Result with:
 ```
 
 ### 2. Teacher Views Pending Quizzes ✅
+
 ```
 Teacher goes to /teacher/results
     ↓
@@ -120,6 +123,7 @@ Each quiz card shows:
 ```
 
 ### 3. Teacher Clicks "Review Now" ✅
+
 ```
 Teacher clicks "Review Now" button
     ↓
@@ -140,6 +144,7 @@ Shows list of students with:
 ```
 
 ### 4. Teacher Clicks "Review & Mark" ✅
+
 ```
 Teacher clicks "Review & Mark" button for specific attempt
     ↓
@@ -163,6 +168,7 @@ Shows Marking Page with:
 ```
 
 ### 5. Teacher Marks and Saves ✅
+
 ```
 Teacher enters marks for each question
 Teacher adds feedback comments
@@ -182,6 +188,7 @@ Status changes to "marked"
 ```
 
 ### 6. Teacher Publishes Result ✅
+
 ```
 Teacher can optionally check "Publish Immediately"
     ↓
@@ -195,6 +202,7 @@ Student sees marks and feedback
 ```
 
 ### 7. Student Views Published Result ✅
+
 ```
 Student navigates to "My Results"
     ↓
@@ -221,6 +229,7 @@ Shows result cards with:
 #### 1. `backend/controllers/resultController.js` (3 methods fixed)
 
 **getStudentAnswerDetails()**
+
 - ✅ Added `createdBy` to populate fields
 - ✅ Verify ownership using populated quiz data
 - ✅ Add null checks for quiz and createdBy
@@ -228,23 +237,28 @@ Shows result cards with:
 - ✅ Include reviewComments in response
 
 **markQuizForTeacher()**
+
 - ✅ Use `.populate("quizId")` instead of separate query
 - ✅ Access quiz from populated result
 
 **publishResultForTeacher()**
+
 - ✅ Use `.populate("quizId")` instead of separate query
 - ✅ Access quiz from populated result
 
 #### 2. `backend/models/resultModel.js`
+
 - ✅ Already has all required fields (reviewStatus, reviewComments, markedBy, markedAt)
 - ✅ No changes needed
 
 #### 3. `frontend/src/components/TeacherQuizAttempts.js`
+
 - ✅ Already properly implemented
 - ✅ Calls correct API: `teacherResultAPI.getQuizAttempts(quizId)`
 - ✅ Handles response structure correctly
 
 #### 4. `frontend/src/components/TeacherMarkQuiz.js`
+
 - ✅ Already properly implemented
 - ✅ Correctly handles API response
 - ✅ Displays all answer types (MCQ and text)
@@ -255,6 +269,7 @@ Shows result cards with:
 ## Testing Checklist
 
 ### Test 1: Student Submits Quiz
+
 - [ ] Student logs in
 - [ ] Student selects and attempts quiz
 - [ ] Student submits quiz successfully
@@ -262,12 +277,14 @@ Shows result cards with:
 - [ ] Result is saved in database with `reviewStatus: "pending"`
 
 ### Test 2: Teacher Sees Pending Quizzes
+
 - [ ] Teacher logs in and goes to Dashboard
 - [ ] "Quizzes Awaiting Review" section is visible
 - [ ] Card shows correct pending count
 - [ ] Click "Review Now" button
 
 ### Test 3: Teacher Views Student Attempts
+
 - [ ] Navigates to `/teacher/quiz/:quizId/attempts` successfully
 - [ ] **KEY TEST**: Page loads WITHOUT "Quiz not found" error
 - [ ] Table displays all student attempts
@@ -275,6 +292,7 @@ Shows result cards with:
 - [ ] Each attempt has "Review & Mark" button
 
 ### Test 4: Teacher Reviews Attempt
+
 - [ ] Click "Review & Mark" button
 - [ ] Navigates to `/teacher/result/:resultId/mark` successfully
 - [ ] **KEY TEST**: Page loads attempt details WITHOUT error
@@ -285,6 +303,7 @@ Shows result cards with:
 - [ ] Text questions show typed answers
 
 ### Test 5: Teacher Marks and Saves
+
 - [ ] Teacher enters marks in input fields
 - [ ] Marks update the summary correctly
 - [ ] Teacher types comments in feedback box
@@ -294,6 +313,7 @@ Shows result cards with:
 - [ ] Redirects to previous page
 
 ### Test 6: Teacher Publishes Result
+
 - [ ] Check the "Publish Immediately" checkbox
 - [ ] Click "Save & Mark" button
 - [ ] Both marking and publishing happen
@@ -301,6 +321,7 @@ Shows result cards with:
 - [ ] Result status changes to "published"
 
 ### Test 7: Student Views Published Result
+
 - [ ] Student logs in and goes to "My Results"
 - [ ] Published result appears in the list
 - [ ] Old pending results do NOT appear
@@ -309,12 +330,14 @@ Shows result cards with:
 - [ ] Sees teacher's feedback comments
 
 ### Test 8: Authorization Check
+
 - [ ] Login as different teacher
 - [ ] Try to access `/teacher/quiz/:quizId/attempts` for someone else's quiz
 - [ ] Should get "403 Forbidden" or "You are not authorized" message
 - [ ] Cannot mark results for other teacher's quizzes
 
 ### Test 9: Edge Cases
+
 - [ ] Quiz with very high marks (999)
 - [ ] Quiz with mixed question types
 - [ ] Result with no marks initially (all 0)
@@ -325,20 +348,21 @@ Shows result cards with:
 
 ## Error Messages - What They Mean Now
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| "Quiz not found" | Quiz doesn't exist | Create quiz first, verify quizId |
-| "You are not authorized to view attempts" | Different teacher's quiz | Can only access own quizzes |
-| "Result not found" | ResultId doesn't exist | Verify resultId from attempts list |
-| "You are not authorized to view this result" | Different teacher's quiz | Teacher ownership verification |
-| "You are not authorized to mark this quiz" | Different teacher's quiz | Can only mark own quizzes |
-| "You are not authorized to publish this result" | Different teacher's quiz | Can only publish own quiz results |
+| Error                                           | Cause                    | Solution                           |
+| ----------------------------------------------- | ------------------------ | ---------------------------------- |
+| "Quiz not found"                                | Quiz doesn't exist       | Create quiz first, verify quizId   |
+| "You are not authorized to view attempts"       | Different teacher's quiz | Can only access own quizzes        |
+| "Result not found"                              | ResultId doesn't exist   | Verify resultId from attempts list |
+| "You are not authorized to view this result"    | Different teacher's quiz | Teacher ownership verification     |
+| "You are not authorized to mark this quiz"      | Different teacher's quiz | Can only mark own quizzes          |
+| "You are not authorized to publish this result" | Different teacher's quiz | Can only publish own quiz results  |
 
 ---
 
 ## Database Query Optimization
 
 ### Before (Inefficient)
+
 ```javascript
 // Multiple queries:
 const result = await Result.findById(resultId)
@@ -355,6 +379,7 @@ const questions = await Question.find({ quizId: result.quizId });
 ```
 
 ### After (Optimized)
+
 ```javascript
 // Single populated query with all needed fields:
 const result = await Result.findById(resultId)
@@ -373,6 +398,7 @@ if (!totalMarks || totalMarks === 0) {
 ```
 
 **Benefits**:
+
 - Reduced database round trips
 - Faster response times
 - Better authorization checks
@@ -385,6 +411,7 @@ if (!totalMarks || totalMarks === 0) {
 After applying all fixes, run these verification steps:
 
 ### 1. Check Backend Changes
+
 ```bash
 cd backend
 # Review resultController.js lines 549-620 (getStudentAnswerDetails)
@@ -393,6 +420,7 @@ cd backend
 ```
 
 ### 2. Check Frontend Still Works
+
 ```bash
 cd frontend
 # No changes needed to frontend files
@@ -401,6 +429,7 @@ npm start
 ```
 
 ### 3. Test API Directly
+
 ```bash
 # 1. Student submits quiz (creates result with pending status)
 curl -X POST http://localhost:4000/api/quiz/submit/QUIZ_ID \

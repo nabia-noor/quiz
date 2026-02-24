@@ -2,7 +2,17 @@ import mongoose from "mongoose";
 
 const classSchema = new mongoose.Schema(
   {
-    name: {
+    degree: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    program: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    session: {
       type: String,
       required: true,
       trim: true,
@@ -12,10 +22,6 @@ const classSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    description: {
-      type: String,
-      trim: true,
-    },
     isActive: {
       type: Boolean,
       default: true,
@@ -23,7 +29,7 @@ const classSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 export default mongoose.models.Class || mongoose.model("Class", classSchema);

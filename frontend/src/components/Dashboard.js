@@ -1,69 +1,45 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { quizAPI, classAPI } from "../api";
+import { quizAPI, classAPI, courseAPI } from "../api";
 import "./Dashboard.css";
 
 function Dashboard() {
   const navigate = useNavigate();
+
   const [stats, setStats] = useState({
     totalQuizzes: 0,
     activeQuizzes: 0,
     totalClasses: 0,
   });
-  const [loading, setLoading] = useState(false);
-  const [classes, setClasses] = useState([]);
-  const [selectedClass, setSelectedClass] = useState("");
-  const [selectedYear, setSelectedYear] = useState("");
+
+  const [coursesCount, setCoursesCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
   const adminData = JSON.parse(localStorage.getItem("adminData") || "{}");
 
-  const classOptions = ["BS", "MS", "PhD"];
-  const yearOptions = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
-
   useEffect(() => {
-    fetchClasses();
-    fetchAdminStats();
-  }, [selectedClass, selectedYear]);
+    fetchDashboardData();
+  }, []);
 
-  const fetchClasses = async () => {
+  const fetchDashboardData = async () => {
     try {
-      const response = await classAPI.getAll();
-      if (response.success) {
-        setClasses(response.classes.filter((c) => c.isActive));
-      }
-    } catch (error) {
-      console.error("Error fetching classes:", error);
-    }
-  };
+      setLoading(true);
 
-  const fetchAdminStats = async () => {
-    try {
-      const [quizzesRes, classesRes] = await Promise.all([
-        quizAPI.getAll(),
-        classAPI.getAll(),
-      ]);
-
-      let filteredQuizzes = quizzesRes.quizzes || [];
-
-      // Filter by selected class and year if available
-      if (selectedClass && selectedYear) {
-        const classData = classes.find(
-          (c) => c.name === selectedClass && c.semester === selectedYear,
-        );
-        if (classData) {
-          filteredQuizzes = filteredQuizzes.filter(
-            (q) => q.classId._id === classData._id,
-          );
-        }
-      }
+      const quizzes = await quizAPI.getAll();
+      const classes = await classAPI.getAll();
+      const courses = await courseAPI.getAll();
 
       setStats({
-        totalQuizzes: filteredQuizzes.length,
-        activeQuizzes: filteredQuizzes.filter((q) => q.isActive).length,
-        totalClasses: classesRes.classes ? classesRes.classes.length : 0,
+        totalQuizzes: quizzes?.quizzes?.length || 0,
+        activeQuizzes: quizzes?.quizzes?.filter((q) => q.isActive)?.length || 0,
+        totalClasses: classes?.classes?.length || 0,
       });
-    } catch (error) {
-      console.error("Error fetching admin stats:", error);
-    } finally {
+
+      setCoursesCount(courses?.courses?.length || 0);
+
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err);
       setLoading(false);
     }
   };
@@ -77,16 +53,15 @@ function Dashboard() {
   return (
     <div className="dashboard-container">
       <nav className="dashboard-nav">
-        <div className="nav-brand">
-          <h1>📊 Quiz Admin Panel</h1>
-          <p className="admin-name">Admin: {adminData.email || "Admin"}</p>
-        </div>
+        <h1>Quiz Admin Panel</h1>
+
         <div className="nav-links">
           <Link to="/admin/dashboard">Dashboard</Link>
-          <Link to="/admin/teachers">Teachers</Link>
           <Link to="/admin/classes">Classes</Link>
+          <Link to="/admin/courses">Courses</Link>
           <Link to="/admin/quizzes">Quizzes</Link>
           <Link to="/admin/results">Results</Link>
+
           <button onClick={handleLogout} className="btn-logout">
             Logout
           </button>
@@ -94,128 +69,41 @@ function Dashboard() {
       </nav>
 
       <div className="dashboard-content">
-        <div className="header-top">
-            <div>
-              <h2>Welcome Back, Admin! 👋</h2>
-              <p>Manage your quiz system and track student performance</p>
-            </div>
-            <div className="admin-profile">
-              <span>👤 {adminData.email || "Admin"}</span>
-            </div>
-          </div>
-
-        <div className="filter-section">
-          <h3>📊 Filter Statistics by Class</h3>
-          <div className="filter-grid">
-            <div className="filter-group">
-              <label>Program</label>
-              <select
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="filter-select"
-              >
-                <option value="">All Programs</option>
-                {classOptions.map((cls) => (
-                  <option key={cls} value={cls}>
-                    {cls}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="filter-group">
-              <label>Year</label>
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value)}
-                disabled={!selectedClass}
-                className="filter-select"
-              >
-                <option value="">All Years</option>
-                {yearOptions.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {selectedClass && selectedYear && (
-              <button
-                className="btn-clear-filter"
-                onClick={() => {
-                  setSelectedClass("");
-                  setSelectedYear("");
-                }}
-              >
-                ✕ Clear Filters
-              </button>
-            )}
-          </div>
-        </div>
+        <h2>Welcome Back, Admin 👋</h2>
+        <div className="admin-profile">👤 {adminData.email || "Admin"}</div>
 
         {loading ? (
-          <div className="loading">Loading statistics...</div>
+          <div className="loading">Loading dashboard data...</div>
         ) : (
-          <>
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-icon">📝</div>
-                <div className="stat-number">{stats.totalQuizzes}</div>
-                <p className="stat-label">Total Quizzes</p>
-                <p className="stat-sub">{stats.activeQuizzes} Active</p>
-                <Link to="/admin/quizzes" className="stat-link">
-                  Manage →
-                </Link>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">🏫</div>
-                <div className="stat-number">{stats.totalClasses}</div>
-                <p className="stat-label">Classes</p>
-                <p className="stat-sub">Semesters & Courses</p>
-                <Link to="/admin/classes" className="stat-link">
-                  Manage →
-                </Link>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">📊</div>
-
-                <div className="stat-number">—</div>
-                <p className="stat-label">Teachers</p>
-                <p className="stat-sub">Manage Instructors</p>
-                <Link to="/admin/teachers" className="stat-link">
-                  Manage →
-                </Link>
-              </div>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-icon">📝</div>
+              <div className="stat-number">{stats.totalQuizzes}</div>
+              <p>Total Quizzes</p>
+              <Link to="/admin/quizzes">Manage →</Link>
             </div>
 
-            <div className="admin-info">
-              <h3>Admin Features</h3>
-              <div className="features-list">
-                <div className="feature-item">
-                  <h4>📋 Quiz Management</h4>
-                  <p>
-                    Create, edit, and delete quizzes with start date, expiry
-                    date, marks, and passing criteria
-                  </p>
-                </div>
-                <div className="feature-item">
-                  <h4>🏫 Class Management</h4>
-                  <p>Manage classes, semesters, and course organization</p>
-                </div>
-                <div className="feature-item">
-                  <h4>❓ Question Management</h4>
-                  <p>Add, edit, and organize quiz questions</p>
-                </div>
-                <div className="feature-item">
-                  <h4>👨‍🏫 Teacher Management</h4>
-                  <p>
-                    Add and manage teachers. Teachers can create quizzes, mark submissions, and publish results.
-                  </p>
-                </div>
-              </div>
+            <div className="stat-card">
+              <div className="stat-icon">🏫</div>
+              <div className="stat-number">{stats.totalClasses}</div>
+              <p>Classes</p>
+              <Link to="/admin/classes">Manage →</Link>
             </div>
-          </>
+
+            <div className="stat-card">
+              <div className="stat-icon">📚</div>
+              <div className="stat-number">{coursesCount}</div>
+              <p>Courses</p>
+              <Link to="/admin/courses">Manage →</Link>
+            </div>
+
+            <div className="stat-card">
+              <div className="stat-icon">👨‍🏫</div>
+              <div className="stat-number">—</div>
+              <p>Teachers</p>
+              <Link to="/admin/teachers">Manage →</Link>
+            </div>
+          </div>
         )}
       </div>
     </div>

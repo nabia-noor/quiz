@@ -3,15 +3,18 @@
 ## User Workflow
 
 ### Step 1: Teacher Login
+
 - Navigate to `/teacher/login`
 - Enter email and password
 - JWT token stored in localStorage
 
 ### Step 2: Dashboard
+
 - View assigned batches and recent quizzes
 - Click "Edit" button on any quiz to manage it
 
 ### Step 3: Create New Quiz
+
 - Click "Create Quiz" button on dashboard
 - Fill form:
   - Quiz Title
@@ -25,6 +28,7 @@
 - Save quiz (creates in Draft status)
 
 ### Step 4: Add Questions
+
 - From dashboard, click "Edit" on quiz
 - On TeacherQuizManagement page:
   - Click "Add Question" button
@@ -37,6 +41,7 @@
   - Save question
 
 ### Step 5: Manage Questions
+
 - **Edit Question**: Click "Edit" on question card
   - Modify text, type, options, or marks
   - Save changes
@@ -47,6 +52,7 @@
   - Only possible before publishing
 
 ### Step 6: Publish Quiz
+
 - When ready and quiz has ≥1 question
 - Click "Publish Quiz" button
 - Confirm publication
@@ -54,6 +60,7 @@
 - Questions locked from editing
 
 ### Step 7: Delete Quiz (Optional)
+
 - Click "Delete Quiz" button
 - Confirm irreversible deletion
 - Quiz removed from system
@@ -61,12 +68,14 @@
 ## API Endpoints Used
 
 ### Teacher Authentication
+
 ```
 POST /api/teacher/login
 Body: { email, password }
 ```
 
 ### Quiz Management
+
 ```
 POST /api/quiz/teacher/create        - Create quiz
 GET  /api/quiz/teacher/my-quizzes    - List teacher's quizzes
@@ -76,6 +85,7 @@ DELETE /api/quiz/teacher/{id}        - Delete quiz
 ```
 
 ### Question Management
+
 ```
 POST /api/question                   - Create question
 GET  /api/question/quiz/{quizId}     - Get all questions for quiz
@@ -99,6 +109,7 @@ App.js
 ## Question Type Reference
 
 ### MCQ (Multiple Choice Question)
+
 - Max 4 options
 - Exactly 1 correct answer
 - Format:
@@ -117,6 +128,7 @@ App.js
   ```
 
 ### True/False
+
 - Always 2 options
 - Exactly 1 correct answer
 - Format:
@@ -133,6 +145,7 @@ App.js
   ```
 
 ### Short Answer
+
 - No options
 - Student types free-form response
 - Format:
@@ -148,18 +161,21 @@ App.js
 ## Status Indicators
 
 ### Quiz Status
+
 - **Draft** (Yellow): Freshly created, can edit questions
 - **Published** (Green): Active for students, questions locked
 
 ## Navigation
 
 ### From TeacherQuizManagement:
+
 - "Back to Dashboard" → `/teacher/dashboard`
 - "Create Quiz" → `/teacher/create-quiz`
 - "My Results" → `/teacher/results`
 - "Logout" → `/teacher/login`
 
 ### From TeacherDashboard:
+
 - "Edit" on quiz row → `/teacher/quiz/{quizId}`
 - "View Courses" → `/teacher/batch/{classId}`
 - "My Results" → `/teacher/results`
@@ -167,6 +183,7 @@ App.js
 ## Authentication Headers
 
 All requests include:
+
 ```
 Authorization: Bearer {teacherToken}
 ```
@@ -176,6 +193,7 @@ Where teacherToken is the JWT received from teacher login.
 ## Error Handling
 
 ### Common Errors
+
 1. **"Quiz not found"**
    - Quiz may have been deleted
    - Go back to dashboard and refresh
@@ -197,6 +215,7 @@ Where teacherToken is the JWT received from teacher login.
 ## Storage
 
 Teacher data stored in localStorage:
+
 ```javascript
 {
   teacherToken: "jwt_token_here",
@@ -209,16 +228,19 @@ Teacher data stored in localStorage:
 ## File Locations
 
 ### New Files
+
 - `frontend/src/components/TeacherQuizManagement.js` - Main component
 - `frontend/src/components/TeacherQuizManagement.css` - Styling
 
 ### Modified Files
+
 - `frontend/src/App.js` - Added route and import
 - `frontend/src/api.js` - Updated authentication handling
 
 ## Keyboard Shortcuts
 
 None implemented yet. Consider:
+
 - `Ctrl+S` to save question
 - `Esc` to cancel editing
 - `Delete` to delete question (with confirmation)
@@ -241,6 +263,7 @@ None implemented yet. Consider:
 ## Rate Limiting
 
 No rate limiting implemented. Consider adding for production:
+
 - 100 quizzes per teacher per semester
 - 500 questions per quiz
 - 10 requests per second API limit

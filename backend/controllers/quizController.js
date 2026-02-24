@@ -8,6 +8,7 @@ export const createQuiz = async (req, res) => {
       title,
       description,
       classId,
+      courseId,
       subjectId,
       duration,
       totalMarks,
@@ -15,6 +16,8 @@ export const createQuiz = async (req, res) => {
       startDate,
       expiryDate,
       isActive,
+      assignedStudentIds,
+      assignedGroupId,
     } = req.body;
 
     if (!title || !classId || !startDate || !expiryDate) {
@@ -28,22 +31,39 @@ export const createQuiz = async (req, res) => {
     const createdBy = req.adminId || req.teacherId;
     const createdByRole = req.adminId ? "admin" : "teacher";
 
-    // If teacher, validate that the course (classId) is assigned to them
+    // If teacher, validate that the course (classId + courseId) is assigned to them
     if (createdByRole === "teacher") {
-      const { default: CourseAssignment } = await import("../models/courseAssignmentModel.js");
-      const assigned = await CourseAssignment.findOne({ teacherId: req.teacherId, classId });
+      if (!courseId) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Course must be selected" });
+      }
+      const { default: CourseAssignment } =
+        await import("../models/courseAssignmentModel.js");
+      const assigned = await CourseAssignment.findOne({
+        teacherId: req.teacherId,
+        classId,
+        courseId,
+      });
       if (!assigned) {
-        return res.status(403).json({ success: false, message: "This course is not assigned to you" });
+        return res
+          .status(403)
+          .json({
+            success: false,
+            message: "This course is not assigned to you",
+          });
       }
     }
 
     // Draft by default for teachers; admins can choose to publish immediately
-    const publishFlag = createdByRole === "admin" ? (isActive ?? true) : (isActive ?? false);
+    const publishFlag =
+      createdByRole === "admin" ? (isActive ?? true) : (isActive ?? false);
 
     const newQuiz = new Quiz({
       title,
       description,
       classId,
+      courseId: courseId || null,
       subjectId: subjectId || null,
       duration,
       totalMarks,
@@ -53,6 +73,10 @@ export const createQuiz = async (req, res) => {
       createdBy: createdByRole === "admin" ? req.adminId : null,
       teacherId: createdByRole === "teacher" ? req.teacherId : null,
       isActive: publishFlag,
+      assignedStudentIds: Array.isArray(assignedStudentIds)
+        ? assignedStudentIds
+        : [],
+      assignedGroupId: assignedGroupId || classId || null,
     });
 
     await newQuiz.save();
@@ -83,7 +107,39 @@ export const getAllQuizzes = async (req, res) => {
       expiryDate: { $gte: now },
     };
 
-    if (classId) {
+    // If the user is a student, restrict to their assignments
+    if (req.userId && !req.adminId && !req.teacherId) {
+      const { default: User } = await import("../models/userModel.js");
+      const user = await User.findById(req.userId);
+      if (user && user.classId) {
+        // Get user's class info
+        const { default: Class } = await import("../models/classModel.js");
+        const userClass = await Class.findById(user.classId);
+        if (!userClass) {
+          return res.status(200).json({ success: true, quizzes: [] });
+        }
+        // Only show quizzes where:
+        // - assignedStudentIds includes this user
+        // - OR assignedGroupId points to a class with the same name (program)
+        // - OR classId points to a class with the same name (program)
+        filter.$or = [
+          { assignedStudentIds: user._id },
+          {
+            assignedGroupId: {
+              $in: await Class.find({ name: userClass.name }).distinct("_id"),
+            },
+          },
+          {
+            classId: {
+              $in: await Class.find({ name: userClass.name }).distinct("_id"),
+            },
+          },
+        ];
+      } else {
+        // If no classId, return empty
+        return res.status(200).json({ success: true, quizzes: [] });
+      }
+    } else if (classId) {
       filter.classId = classId;
     }
 
@@ -156,16 +212,25 @@ export const getQuizByIdForTeacher = async (req, res) => {
       .populate("createdBy", "name email");
 
     if (!quiz) {
-      return res.status(404).json({ success: false, message: "Quiz not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Quiz not found" });
     }
 
     if (!quiz.teacherId || quiz.teacherId.toString() !== teacherId) {
-      return res.status(403).json({ success: false, message: "You do not have access to this quiz" });
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: "You do not have access to this quiz",
+        });
     }
 
     return res.status(200).json({ success: true, quiz });
   } catch (error) {
-    return res.status(500).json({ success: false, message: "Server error", error: error.message });
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 
@@ -236,7 +301,7 @@ export const updateQuiz = async (req, res) => {
         expiryDate,
         isActive,
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).populate("classId", "name semester");
 
     return res.status(200).json({

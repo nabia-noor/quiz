@@ -1,3 +1,23 @@
+// Course API (Admin)
+export const courseAPI = {
+  create: async (data) => {
+    const response = await fetch(`${API_URL}/course`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getAdminToken()}`,
+      },
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  },
+  getAll: async () => {
+    const response = await fetch(`${API_URL}/course`, {
+      headers: { Authorization: `Bearer ${getAdminToken()}` },
+    });
+    return response.json();
+  },
+};
 const API_URL = "http://localhost:4000/api";
 
 // Get token from localStorage
@@ -10,7 +30,7 @@ const getAuthToken = () => {
   const adminToken = getAdminToken();
   const teacherToken = getTeacherToken();
   const userToken = getUserToken();
-  
+
   return adminToken || teacherToken || userToken;
 };
 // Subject API (Admin)
@@ -33,7 +53,9 @@ export const subjectAPI = {
     return response.json();
   },
   search: async (q) => {
-    const url = q ? `${API_URL}/subject/search?q=${encodeURIComponent(q)}` : `${API_URL}/subject/search`;
+    const url = q
+      ? `${API_URL}/subject/search?q=${encodeURIComponent(q)}`
+      : `${API_URL}/subject/search`;
     const response = await fetch(url, {
       headers: { Authorization: `Bearer ${getAdminToken()}` },
     });
@@ -465,22 +487,28 @@ export const teacherAPI = {
   },
 
   assignCourses: async (teacherId, assignments) => {
-    const response = await fetch(`${API_URL}/teacher/${teacherId}/assign-courses`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${getAdminToken()}`,
+    const response = await fetch(
+      `${API_URL}/teacher/${teacherId}/assign-courses`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getAdminToken()}`,
+        },
+        body: JSON.stringify({ assignments }),
       },
-      body: JSON.stringify({ assignments }),
-    });
+    );
     return response.json();
   },
 
   // Admin: Get assignments for a specific teacher
   getAssignmentsForTeacherAdmin: async (teacherId) => {
-    const response = await fetch(`${API_URL}/teacher/${teacherId}/assigned-courses`, {
-      headers: { Authorization: `Bearer ${getAdminToken()}` },
-    });
+    const response = await fetch(
+      `${API_URL}/teacher/${teacherId}/assigned-courses`,
+      {
+        headers: { Authorization: `Bearer ${getAdminToken()}` },
+      },
+    );
     return response.json();
   },
 
@@ -587,9 +615,12 @@ export const teacherResultAPI = {
   },
 
   getAttemptDetails: async (resultId) => {
-    const response = await fetch(`${API_URL}/result/teacher/attempt/${resultId}`, {
-      headers: { Authorization: `Bearer ${getTeacherToken()}` },
-    });
+    const response = await fetch(
+      `${API_URL}/result/teacher/attempt/${resultId}`,
+      {
+        headers: { Authorization: `Bearer ${getTeacherToken()}` },
+      },
+    );
     return response.json();
   },
 
@@ -606,14 +637,17 @@ export const teacherResultAPI = {
   },
 
   publishResult: async (resultId) => {
-    const response = await fetch(`${API_URL}/result/teacher/${resultId}/publish`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${getTeacherToken()}`,
+    const response = await fetch(
+      `${API_URL}/result/teacher/${resultId}/publish`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getTeacherToken()}`,
+        },
+        body: JSON.stringify({}),
       },
-      body: JSON.stringify({}),
-    });
+    );
     return response.json();
   },
 };
