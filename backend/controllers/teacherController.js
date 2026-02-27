@@ -298,18 +298,35 @@ export const assignCourses = async (req, res) => {
     const adminId = req.adminId;
 
     // Validate teacherId
+    console.log("AssignCourses called", { teacherId, batchId, courseId });
     if (!teacherId || !teacherId.match(/^[0-9a-fA-F]{24}$/)) {
+      console.error("Invalid teacherId", teacherId);
       return res
         .status(400)
-        .json({ success: false, message: "Invalid teacherId" });
+        .json({ success: false, message: "Invalid teacherId", teacherId });
+    }
+
+    // Validate batchId and courseId
+    if (!batchId || !batchId.match(/^[0-9a-fA-F]{24}$/)) {
+      console.error("Invalid batchId", batchId);
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid batchId", batchId });
+    }
+    if (!courseId || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
+      console.error("Invalid courseId", courseId);
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid courseId", courseId });
     }
 
     // Verify teacher exists
     const teacher = await Teacher.findById(teacherId);
     if (!teacher) {
+      console.error("Teacher not found", teacherId);
       return res
         .status(404)
-        .json({ success: false, message: "Teacher not found" });
+        .json({ success: false, message: "Teacher not found", teacherId });
     }
 
     // Verify batch and course exist
@@ -317,17 +334,19 @@ export const assignCourses = async (req, res) => {
       m.default.findById(batchId),
     );
     if (!batchExists) {
+      console.error("Batch not found", batchId);
       return res
         .status(404)
-        .json({ success: false, message: "Batch not found" });
+        .json({ success: false, message: "Batch not found", batchId });
     }
     const courseExists = await import("../models/courseModel.js").then((m) =>
       m.default.findById(courseId),
     );
     if (!courseExists) {
+      console.error("Course not found", courseId);
       return res
         .status(404)
-        .json({ success: false, message: "Course not found" });
+        .json({ success: false, message: "Course not found", courseId });
     }
 
     // Check for duplicate for this teacher, batch, course
@@ -337,6 +356,11 @@ export const assignCourses = async (req, res) => {
       course: courseId,
     });
     if (exists) {
+      console.log("Assignment already exists", {
+        teacherId,
+        batchId,
+        courseId,
+      });
       // Already assigned, ignore and return success
       return res.status(200).json({
         success: true,
@@ -345,13 +369,23 @@ export const assignCourses = async (req, res) => {
       });
     }
 
-    // Create assignment
+    // Final check for null/undefined
+    if (!teacherId || !batchId || !courseId) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields for assignment",
+        teacherId,
+        batchId,
+        courseId,
+      });
+    }
     const assignment = await CourseAssignment.create({
       teacher: teacherId,
       batch: batchId,
       course: courseId,
       assignedBy: adminId,
     });
+    console.log("Assignment created", assignment);
 
     return res.status(201).json({
       success: true,
@@ -364,6 +398,51 @@ export const assignCourses = async (req, res) => {
       message: "Server error",
       error: error.message,
     });
+  }
+};
+
+// Admin: Remove Course Assignment from Teacher
+export const removeCourseAssignment = async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    const { batchId, courseId } = req.body;
+    const adminId = req.adminId;
+
+    // Validate IDs
+    if (!teacherId || !teacherId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid teacherId", teacherId });
+    }
+    if (!batchId || !batchId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid batchId", batchId });
+    }
+    if (!courseId || !courseId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid courseId", courseId });
+    }
+
+    // Find and delete assignment
+    const deleted = await CourseAssignment.findOneAndDelete({
+      teacher: teacherId,
+      batch: batchId,
+      course: courseId,
+    });
+    if (!deleted) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Assignment not found" });
+    }
+    return res
+      .status(200)
+      .json({ success: true, message: "Assignment removed successfully" });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error", error: error.message });
   }
 };
 

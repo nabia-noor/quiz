@@ -487,6 +487,7 @@ export const teacherAPI = {
   },
 
   assignCourses: async (teacherId, assignments) => {
+    // assignments should be an object with batchId and courseId
     const response = await fetch(
       `${API_URL}/teacher/${teacherId}/assign-courses`,
       {
@@ -495,7 +496,7 @@ export const teacherAPI = {
           "Content-Type": "application/json",
           Authorization: `Bearer ${getAdminToken()}`,
         },
-        body: JSON.stringify({ assignments }),
+        body: JSON.stringify(assignments),
       },
     );
     return response.json();

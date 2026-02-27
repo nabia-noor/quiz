@@ -5,21 +5,24 @@ import {
 
 // Middleware to allow either teacher or admin authentication
 export async function combineAuth(req, res, next) {
-  // Try teacher auth first
-  await teacherAuthMiddleware(req, res, async function (err) {
-    if (!err && req.teacherId) {
+  try {
+    await teacherAuthMiddleware(req, res, () => {});
+    if (req.teacherId) {
       return next();
     }
-    // If not teacher, try admin
-    await adminAuthMiddleware(req, res, function (err2) {
-      if (!err2 && req.adminId) {
-        return next();
-      }
-      // If neither, return unauthorized
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized. Teacher or Admin access required.",
-      });
-    });
+  } catch (e) {
+    // Ignore teacher error, try admin
+  }
+  try {
+    await adminAuthMiddleware(req, res, () => {});
+    if (req.adminId) {
+      return next();
+    }
+  } catch (e) {
+    // Ignore admin error
+  }
+  return res.status(401).json({
+    success: false,
+    message: "Unauthorized. Teacher or Admin access required.",
   });
 }

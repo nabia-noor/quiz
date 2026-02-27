@@ -4,12 +4,18 @@ import { teacherAPI, teacherQuizAPI } from "../api";
 import "./TeacherCreateQuiz.css";
 
 function TeacherCreateQuiz() {
+  // Logout handler
+  const handleLogout = () => {
+    teacherAPI.logout();
+    navigate("/teacher/login");
+  };
+  // State and hooks
   const navigate = useNavigate();
-
   const [assignedBatches, setAssignedBatches] = useState([]);
   const [assignedCourses, setAssignedCourses] = useState([]);
-
   const [formData, setFormData] = useState({
+    title: "",
+    description: "",
     classId: "",
     courseId: "",
     duration: 30,
@@ -18,51 +24,65 @@ function TeacherCreateQuiz() {
     startDate: "",
     expiryDate: "",
   });
-
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showAddQuestions, setShowAddQuestions] = useState(false);
   const [createdQuizId, setCreatedQuizId] = useState(null);
-
+  const [statusMessage, setStatusMessage] = useState("");
   const teacherData = JSON.parse(localStorage.getItem("teacherData") || "{}");
 
+  // Handle input changes for form fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    // If batch (classId) changes, reset courseId and fetch courses for that batch
+    if (name === "classId") {
+      setFormData((prev) => ({ ...prev, courseId: "" }));
+      fetchAssignedCourses(value);
+    }
   };
 
-  const handleSubmit = async (e, publish = false) => {
-    if (e) e.preventDefault();
+  // Fetch assigned batches for the teacher
+  useEffect(() => {
+    const fetchBatches = async () => {
+      setLoading(true);
+      try {
+        const res = await teacherAPI.getAssignedBatches();
+        setAssignedBatches(res.batches || []);
+      } catch (err) {
+        setError("Failed to fetch assigned batches");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBatches();
+    // eslint-disable-next-line
+  }, []);
 
+  // Fetch assigned courses for a selected batch
+  const fetchAssignedCourses = async (classId) => {
+    if (!classId) {
+      setAssignedCourses([]);
+      return;
+    }
+    try {
+      const res = await teacherAPI.getCoursesForBatch(classId);
+      setAssignedCourses(res.courses || []);
+    } catch (err) {
+      setAssignedCourses([]);
+      setError("Failed to fetch assigned courses");
+    }
+  };
+
+  // Handle quiz form submission
+  const handleSubmit = async (e, publish) => {
+    e.preventDefault();
+    setSubmitting(true);
     setError("");
     setSuccess("");
-
-    if (
-      !formData.classId ||
-      !formData.courseId ||
-      !formData.startDate ||
-      !formData.expiryDate ||
-      !formData.duration ||
-      !formData.totalMarks ||
-      !formData.passingMarks
-    ) {
-      setError("Please fill in all required fields");
-      return;
-    }
-
-    if (new Date(formData.startDate) > new Date(formData.expiryDate)) {
-      setError("Start date must be before expiry date");
-      return;
-    }
-
     try {
-      setSubmitting(true);
-
       const response = await teacherQuizAPI.create({
         title: formData.title,
         description: formData.description,
@@ -73,16 +93,13 @@ function TeacherCreateQuiz() {
         passingMarks: parseInt(formData.passingMarks),
         startDate: formData.startDate,
         expiryDate: formData.expiryDate,
-        isActive: publish,
       });
-
       if (response.success) {
-        setSuccess(
+        setStatusMessage(
           publish
             ? "Quiz published successfully!"
             : "Quiz saved as draft successfully!",
         );
-
         if (!publish) {
           setShowAddQuestions(true);
           setCreatedQuizId(response.quiz?._id || response.quizId);
@@ -99,11 +116,6 @@ function TeacherCreateQuiz() {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const handleLogout = () => {
-    teacherAPI.logout();
-    navigate("/teacher/login");
   };
 
   if (loading) {
@@ -165,6 +177,9 @@ function TeacherCreateQuiz() {
           <h2>Create New Quiz</h2>
           {error && <div className="alert alert-error">{error}</div>}
           {success && <div className="alert alert-success">{success}</div>}
+          {statusMessage && (
+            <div className="alert alert-info">{statusMessage}</div>
+          )}
           <form onSubmit={(e) => handleSubmit(e, false)} className="quiz-form">
             <div className="form-section">
               <h3>Batch & Course</h3>

@@ -11,6 +11,7 @@ import {
   getAssignedCourses,
   getAssignedBatches,
   getCoursesForBatch,
+  removeCourseAssignment,
 } from "../controllers/teacherController.js";
 import {
   adminAuthMiddleware,
@@ -92,6 +93,13 @@ teacherRouter.post(
   "/:teacherId/assign-courses",
   adminAuthMiddleware,
   assignCourses,
+);
+
+// Remove Course Assignment
+teacherRouter.delete(
+  "/:teacherId/assign-courses",
+  adminAuthMiddleware,
+  removeCourseAssignment,
 );
 
 export default teacherRouter;
